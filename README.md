@@ -21,6 +21,13 @@
 - Rust and `cargo test`
 - Implement task from day 2 and then day 3
 
+**Practice** 
+- TDD and learning Rust
+
+**Lessons learned**
+- Github Copilot is your friend when learning Rust syntax
+- This task took much longer than needed, because initially I went with a brute force approach, later got moving when decided to step by characters
+
 ### Day 4
 - Python and `pytest`
 - Implement task from day 3 and then day 4

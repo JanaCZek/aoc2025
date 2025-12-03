@@ -57,33 +57,34 @@ pub fn generate_n_digit_combinations(digits: &[u8], n: u8) -> Vec<u64> {
 
 pub fn find_largest_n_digit_number_in_bank(bank: &str, n: u8) -> u64 {
     let digit_chars = bank.chars().collect::<Vec<char>>();
-    let digits: Vec<u8> = digit_chars
+    let digits: Vec<(usize, u8)> = digit_chars
         .iter()
-        .map(|&c| c.to_digit(10).unwrap() as u8)
+        .enumerate()
+        .map(|(i, &c)| (i, c.to_digit(10).unwrap() as u8))
         .collect();
 
-    let combinations = generate_n_digit_combinations(&digits, n);
-    *combinations.iter().max().unwrap()
-}
+    let mut min_index = 0;
+    let mut max_index = digits.len() - n as usize;
+    let mut digit_index = 0;
+    let mut largest_number = 0;
+    let mut output = Vec::with_capacity(n as usize);
+    let mut found_digits = 0;
 
-// 1 2 3 4 5 6
-// 1 2 3
-// 1 2 4
-// 1 2 5
-// 1 2 6
-// 1 3 4
-// 1 3 5
-// 1 3 6
-// 1 4 5
-// 1 4 6
-// 1 5 6
-// 2 3 4
-// 2 3 5
-// 2 3 6
-// 2 4 5
-// 2 4 6
-// 2 5 6
-// 3 4 5
-// 3 4 6
-// 3 5 6
-// 4 5 6
+    while found_digits < n {
+        for digit in digits.iter() {
+            if digit.0 >= min_index && digit.1 > largest_number && digit.0 <= max_index {
+                largest_number = digit.1;
+                digit_index = digit.0;
+            }
+        }
+        output.push(largest_number.to_string());
+        largest_number = 0;
+        found_digits += 1;
+        min_index = digit_index + 1;
+        max_index += 1;
+    }
+    
+    output
+        .iter()
+        .fold(0u64, |acc, d| acc * 10 + d.parse::<u64>().unwrap())
+}

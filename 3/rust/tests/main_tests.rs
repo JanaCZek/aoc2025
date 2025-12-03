@@ -2,6 +2,8 @@ use std::fs;
 
 use aoc_day_3::{find_largest_n_digit_number_in_bank, find_largest_two_digit_number_in_bank, generate_n_digit_combinations};
 
+// Run tests with output
+// cargo test -- --nocapture
 
 #[test]
 fn finds_two_largest_digits_in_bank() {
@@ -41,7 +43,7 @@ fn generates_n_digit_combinations() {
 
     for (digits, n, expected_combinations) in inputs {
         let generated_combinations = generate_n_digit_combinations(digits, n);
-        assert_eq!(generated_combinations, expected_combinations, "Failed for digits: {:?}, n: {}", digits, n);
+        assert_eq!(generated_combinations, expected_combinations, "Failed for digits: {digits:?}, n: {n}");
     }
     
     assert_eq!(true, true);
@@ -86,9 +88,7 @@ fn input_test_part_two() {
     let mut sum: u64 = 0;
 
     for line in contents.lines() {
-        println!("Processing line: {line}");
         let largest = find_largest_n_digit_number_in_bank(line, 12);
-        println!("{largest}");
         sum += largest;
     }
 
