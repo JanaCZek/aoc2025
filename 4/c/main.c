@@ -79,12 +79,11 @@ void test_adjacent_paper_rolls()
     assert((fully_adjacent_roll.adjacent_count == 8) && "Test failed: Fully adjacent paper roll adjacent count incorrect.");
 }
 
-void test_removal_of_paper_rolls()
+void test_detection_of_paper_rolls_to_remove()
 {
     PaperRoll all_paper_rolls[] = {
         {0, 1, 0},
-        {0, 2, 0}
-    };
+        {0, 2, 0}};
 
     int all_paper_rolls_count = 2;
     int paper_roll_indexes_to_remove[all_paper_rolls_count];
@@ -95,25 +94,47 @@ void test_removal_of_paper_rolls()
     assert((removal_count == 2) && "Test failed: Paper rolls were not removed.");
 }
 
+void test_removal_of_detected_paper_rolls()
+{
+    PaperRoll all_paper_rolls[] = {
+        {0, 1, 0},
+        {0, 2, 0}};
+
+    int all_paper_rolls_count = sizeof(all_paper_rolls) / sizeof(all_paper_rolls[0]);
+
+    int paper_roll_indexes_to_remove[] = {0};
+    int removal_count = sizeof(paper_roll_indexes_to_remove) / sizeof(paper_roll_indexes_to_remove[0]);
+
+    int updated_paper_rolls_count = all_paper_rolls_count - removal_count;
+    PaperRoll updated_paper_rolls[updated_paper_rolls_count];
+
+    remove_detected_paper_rolls(
+        all_paper_rolls,
+        &all_paper_rolls_count,
+        paper_roll_indexes_to_remove,
+        removal_count,
+        updated_paper_rolls);
+
+    assert((updated_paper_rolls[0].row_position == 0) && (updated_paper_rolls[0].column_position == 2) && "Test failed: Updated paper roll position incorrect.");
+}
+
 void run_all_tests()
 {
     test_paper_roll_detection();
     test_paper_roll_creation();
     test_adjacent_paper_rolls();
-    test_removal_of_paper_rolls();
+    test_detection_of_paper_rolls_to_remove();
+    test_removal_of_detected_paper_rolls();
 
     printf("\n***\n");
     printf("All tests passed!\n");
     printf("***\n\n");
 }
 
-int main()
+int run_part_one(const char *file_path)
 {
-    run_all_tests();
-
     size_t buffer_size = 0;
-    const char* file_path = "../input.txt";
-    
+
     char *buffer = create_buffer_for_file(file_path, &buffer_size);
 
     if (buffer == NULL)
@@ -129,12 +150,15 @@ int main()
         return -1;
     }
 
+    printf("Part one\n");
+
     int number_of_paper_rolls_count = number_of_paper_rolls(buffer, buffer_size, TARGET_CHAR);
     PaperRoll paper_rolls[number_of_paper_rolls_count];
 
     create_paper_rolls(buffer, buffer_size, paper_rolls, TARGET_CHAR);
 
-    for (int i = 0; i < number_of_paper_rolls_count; ++i) {
+    for (int i = 0; i < number_of_paper_rolls_count; ++i)
+    {
         number_of_adjacent_paper_rolls(paper_rolls, number_of_paper_rolls_count, &paper_rolls[i]);
     }
 
@@ -146,6 +170,87 @@ int main()
     printf("Number of paper rolls to remove: %d\n", removal_count);
 
     free(buffer);
+
+    return 0;
+}
+
+int run_part_two(const char *file_path)
+{
+    size_t buffer_size = 0;
+
+    char *buffer = create_buffer_for_file(file_path, &buffer_size);
+
+    if (buffer == NULL)
+    {
+        return -1;
+    }
+
+    int file_read_status = read_file_contents_into_buffer(file_path, buffer, buffer_size);
+
+    if (file_read_status < 0)
+    {
+        free(buffer);
+        return -1;
+    }
+
+    printf("Part one\n");
+
+    int number_of_paper_rolls_count = number_of_paper_rolls(buffer, buffer_size, TARGET_CHAR);
+    PaperRoll paper_rolls[number_of_paper_rolls_count];
+    PaperRoll* paper_rolls_ptr = paper_rolls;
+
+    create_paper_rolls(buffer, buffer_size, paper_rolls, TARGET_CHAR);
+
+    for (int i = 0; i < number_of_paper_rolls_count; ++i)
+    {
+        number_of_adjacent_paper_rolls(paper_rolls, number_of_paper_rolls_count, &paper_rolls[i]);
+    }
+
+    int paper_roll_indexes_to_remove[number_of_paper_rolls_count];
+    int removal_count = 0;
+
+    detect_paper_rolls_to_remove(paper_rolls, number_of_paper_rolls_count, paper_roll_indexes_to_remove, &removal_count);
+
+    printf("Number of paper rolls to remove: %d\n", removal_count);
+
+    int updated_paper_rolls_count = number_of_paper_rolls_count - removal_count;
+    PaperRoll updated_paper_rolls[updated_paper_rolls_count];
+
+    paper_rolls_ptr = updated_paper_rolls;
+
+    remove_detected_paper_rolls(
+        paper_rolls,
+        &number_of_paper_rolls_count,
+        paper_roll_indexes_to_remove,
+        removal_count,
+        updated_paper_rolls);
+
+    for (int i = 0; i < updated_paper_rolls_count; ++i)
+    {
+        number_of_adjacent_paper_rolls(updated_paper_rolls, updated_paper_rolls_count, &updated_paper_rolls[i]);
+    }
+
+    int updated_paper_roll_indexes_to_remove[updated_paper_rolls_count];
+    int updated_removal_count = 0;
+
+    detect_paper_rolls_to_remove(updated_paper_rolls, updated_paper_rolls_count, updated_paper_roll_indexes_to_remove, &updated_removal_count);
+
+    printf("Number of paper rolls to remove: %d\n", updated_removal_count);
+
+    free(buffer);
+
+    return 0;
+}
+
+int main()
+{
+    run_all_tests();
+
+    // return 0;
+
+    // run_part_one("../input.txt");
+
+    run_part_two("../input_small.txt");
 
     return 0;
 }

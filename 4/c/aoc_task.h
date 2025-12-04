@@ -85,4 +85,21 @@ void detect_paper_rolls_to_remove(PaperRoll *all_paper_rolls, int all_paper_roll
     *removal_count = count;
 }
 
+void remove_detected_paper_rolls(PaperRoll *all_paper_rolls, int *all_paper_rolls_count, int* paper_roll_indexes_to_remove, int removal_count, PaperRoll* updated_paper_rolls) {
+    int index = 0;
+    for (int i = 0; i < *all_paper_rolls_count; ++i) {
+        int to_remove = 0;
+        for (int j = 0; j < removal_count; ++j) {
+            if (i == paper_roll_indexes_to_remove[j]) {
+                to_remove = 1;
+                break;
+            }
+        }
+        if (!to_remove) {
+            updated_paper_rolls[index] = all_paper_rolls[i];
+            index++;
+        }
+    }
+}
+
 #endif
