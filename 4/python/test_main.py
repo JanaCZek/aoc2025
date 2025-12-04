@@ -1,10 +1,21 @@
-def test_file():
+def test_file_part_one():
     with open("C:\\Projects\\playground\\aoc2025\\4\\input.txt", "r") as file:
         data = file.read()
         trimmed_data = data.strip()
         
         accessible_paper_roles = detect_accessible_paper_rolls(trimmed_data)
         print(f"Accessible paper rolls: {accessible_paper_roles}")
+    assert True == True
+
+def test_file_part_two():
+    with open("C:\\Projects\\playground\\aoc2025\\4\\input.txt", "r") as file:
+        data = file.read()
+        trimmed_data = data.strip()
+        
+    paper_positions = get_all_paper_positions(trimmed_data)
+    remaining_paper_positions = remove_accessible_paper_rolls(trimmed_data)
+    removed_count = len(paper_positions) - len(remaining_paper_positions)
+    print(f"Removed paper positions: {removed_count}")
     assert True == True
 
 def test_detects_accessible_paper_rolls():
@@ -45,6 +56,51 @@ def test_get_adjacent_count():
     
     assert get_adjacent_count(paper_positions, (1, 0)) == 3
 
+def test_removes_accessible_paper_rolls():
+    grid = """..@@.@@@@.
+@@@.@.@.@@
+@@@@@.@.@@
+@.@@@@..@.
+@@.@@@@.@@
+.@@@@@@@.@
+.@.@.@.@@@
+@.@@@.@@@@
+.@@@@@@@@.
+@.@.@@@.@."""
+
+    paper_positions = get_all_paper_positions(grid)
+    remaining_paper_positions = remove_accessible_paper_rolls(grid)
+    removed_count = len(paper_positions) - len(remaining_paper_positions)
+    print(f"Removed paper positions: {removed_count}")
+    assert True == True
+
+def detect_accessible_paper_rolls(grid):
+    paper_positions = get_all_paper_positions(grid)
+    accessible_count = 0
+    for position in paper_positions:
+        if get_adjacent_count(paper_positions, position) < 4:
+            accessible_count += 1
+    return accessible_count
+
+def remove_accessible_paper_rolls(grid):
+    paper_positions = get_all_paper_positions(grid)
+    next_paper_positions = []
+    removed_count = 0
+    
+    while True:
+        for position in paper_positions:
+            if get_adjacent_count(paper_positions, position) >= 4:
+                next_paper_positions.append(position)
+            else:
+                removed_count += 1
+        if removed_count == 0:
+            break
+        paper_positions = next_paper_positions
+        next_paper_positions = []
+        removed_count = 0
+
+    return next_paper_positions
+
 def get_adjacent_count(paper_positions, position):
     y, x = position
     adjacent_positions = [
@@ -66,13 +122,4 @@ def get_all_paper_positions(grid):
         for x, cell in enumerate(row):
             if cell == '@':
                 positions.append((y, x))
-    return positions
-    
-
-def detect_accessible_paper_rolls(grid):
-    paper_positions = get_all_paper_positions(grid)
-    accessible_count = 0
-    for position in paper_positions:
-        if get_adjacent_count(paper_positions, position) < 4:
-            accessible_count += 1
-    return accessible_count
+    return positions    
