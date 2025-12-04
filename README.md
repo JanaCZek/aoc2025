@@ -42,6 +42,12 @@
 - C and custom simple test runner
 - Implement task from day 4 and then day 5
 
+**Lessons learned**
+- Binding folder into container: `docker run -it --mount "type=bind,src=$($pwd),target=/usr/src/5" -w /usr/src/5 --name aoc-gcc gcc:15.2`
+- Building: `gcc -o build/main main.c`
+- Running from `c` folder: `cd build/ && ./main && cd ..`
+- Using devcontainers: https://blog.mandraketech.in/vscode-devcontainer-setup-for-cpp-programmers
+
 ### Day 6
 - Language TBD, probably Python
 - Implement task from day 6

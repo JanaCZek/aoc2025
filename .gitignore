@@ -419,3 +419,4 @@ FodyWeavers.xsd
 
 **/target
 **/.pytest_cache/
+**/output
