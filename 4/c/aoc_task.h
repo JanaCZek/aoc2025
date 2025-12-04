@@ -44,7 +44,7 @@ void create_paper_rolls(const char *input_data, const size_t input_data_length, 
 }
 
 int number_of_adjacent_paper_rolls(PaperRoll *all_paper_rolls, int all_paper_rolls_count, PaperRoll* paper_roll) {
-    PaperRoll paper_rolls_of_interest[ADJACENT_FLAT_POSITIONS_COUNT] = {
+    PaperRoll paper_rolls_of_interest[] = {
         {paper_roll->row_position - 1, paper_roll->column_position - 1, 0},
         {paper_roll->row_position - 1, paper_roll->column_position, 0},
         {paper_roll->row_position - 1, paper_roll->column_position + 1, 0},
@@ -55,13 +55,16 @@ int number_of_adjacent_paper_rolls(PaperRoll *all_paper_rolls, int all_paper_rol
         {paper_roll->row_position + 1, paper_roll->column_position + 1, 0}
     };
 
+    int paper_rolls_of_interest_count = sizeof(paper_rolls_of_interest) / sizeof(paper_rolls_of_interest[0]);
+
     int adjacent_count = 0;
     for (int i = 0; i < all_paper_rolls_count; ++i) {
-        for (int j = 0; j < ADJACENT_FLAT_POSITIONS_COUNT; ++j) {
-            if (all_paper_rolls[i].row_position == paper_rolls_of_interest[j].row_position &&
-                all_paper_rolls[i].column_position == paper_rolls_of_interest[j].column_position) {
+        for (int j = 0; j < paper_rolls_of_interest_count; ++j) {
+            PaperRoll* current = &all_paper_rolls[i];
+            PaperRoll* target = &paper_rolls_of_interest[j];
+            if (current->row_position == target->row_position &&
+                current->column_position == target->column_position) {
                 adjacent_count++;
-                break;
             }
         }
     }

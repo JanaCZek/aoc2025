@@ -97,7 +97,6 @@ void test_removal_of_paper_rolls()
 
 void run_all_tests()
 {
-
     test_paper_roll_detection();
     test_paper_roll_creation();
     test_adjacent_paper_rolls();
@@ -113,14 +112,16 @@ int main()
     run_all_tests();
 
     size_t buffer_size = 0;
-    char *buffer = create_buffer_for_file("../input_small.txt", &buffer_size);
+    const char* file_path = "../input.txt";
+    
+    char *buffer = create_buffer_for_file(file_path, &buffer_size);
 
     if (buffer == NULL)
     {
         return -1;
     }
 
-    int file_read_status = read_file_contents_into_buffer("../input_small.txt", buffer, buffer_size);
+    int file_read_status = read_file_contents_into_buffer(file_path, buffer, buffer_size);
 
     if (file_read_status < 0)
     {
