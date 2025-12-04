@@ -30,7 +30,13 @@
 
 ### Day 4
 - Python and `pytest`
-- Implement task from day 3 and then day 4
+- Implement task from day 4 and then day 3
+
+**Practice** 
+- TDD and learning Python
+
+**Lessons learned**
+- Github Copilot is amazing at moving forward fast
 
 ### Day 5
 - C and custom simple test runner
