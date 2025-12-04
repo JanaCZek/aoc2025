@@ -34,30 +34,31 @@
 
 **Practice** 
 - TDD and learning Python
+- C simple test runner
 
 **Lessons learned**
 - Github Copilot is amazing at moving forward fast
-
-### Day 5
-- C and custom simple test runner
-- Implement task from day 4 and then day 5
-
-**Lessons learned**
 - Binding folder into container: `docker run -it --mount "type=bind,src=$($pwd),target=/usr/src/5" -w /usr/src/5 --name aoc-gcc gcc:15.2`
 - Building: `gcc -o build/main main.c`
 - Running from `c` folder: `cd build/ && ./main && cd ..`
 - Using devcontainers: https://blog.mandraketech.in/vscode-devcontainer-setup-for-cpp-programmers
+- Decided to scratch the idea to implement day 5 in C - at least not the initial implementation, it takes way too much time
+- Devcontainers are cool and save time
 
-### Day 6
+### Day 5
 - Language TBD, probably Python
-- Implement task from day 6
 
 **Practice** 
 - Planning AI agent in VS Code
 
-### Day 7
+### Day 6
 - Language TBD, probably Python
-- Implement task from day 7
 
 **Practice** 
 - Write tests first, then let AI do the implementation
+
+### Day 7
+- Language TBD
+
+**Practice** 
+- Try implementing any of the previous tasks in SQL, for shits and giggles
