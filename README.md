@@ -50,6 +50,12 @@
 
 **Practice** 
 - Planning AI agent in VS Code
+- TDD and learning Rust
+
+**Lessons learned**
+- Spend a good while on tuning the plan. You can make manual changes, but it's better to make AI make them for you
+- Insist on the AI to specify implementation steps in detail
+- Github Copilot is amazing at moving forward fast
 
 ### Day 6
 - Language TBD, probably Python
