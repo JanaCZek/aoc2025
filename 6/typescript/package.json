@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.14"
+  },
+  "dependencies": {
+    "@types/node": "^24.10.1"
+  }
+}
