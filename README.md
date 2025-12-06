@@ -58,7 +58,7 @@
 - Github Copilot is amazing at moving forward fast
 
 ### Day 6
-- Language TBD, probably Python
+- Python
 
 **Practice** 
 - Write tests first, then let AI do the implementation
@@ -66,7 +66,7 @@
 - TDD in Typescript
 
 **Lessons learned**
-- AI had a really hard time with this one. Part one was done quite fast, but the second one it could not get even after tens of tries. Decided to scratch that and move on.
+- AI had a really hard time with this one. Part one was done quite fast, but the second one it could not get even after tens of tries. I had to complete that manually. Decided to scratch that and move on.
 - Sometimes the regular agent mode can be better at making a plan than the dedicated Plan agent
 
 ### Day 7

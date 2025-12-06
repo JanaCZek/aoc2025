@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
-import { findOperatorIndexes, performOperation, splitIntoColumns } from './main';
+import { findOperatorIndexes, performOperation, splitIntoColumns, splitIntoColumnsPadded } from './main';
 
 // Run using "npm run test"
 describe('Vertical parser tests', () => {
@@ -42,6 +42,23 @@ describe('Vertical parser tests', () => {
 
         expect(results).toEqual(expected);
     });
+
+    it('splits into columns vertically', () => {
+        const input = [
+            '123 328  51 64 ',
+            ' 45 64  387 23 ',
+            '  6 98  215 314',
+            '*   +   *   +  '
+        ];
+        const expected = [
+            '1\n24\n356\n*',
+            '369\n248\n8\n+',
+            '32\n581\n175\n*',
+            '623\n431\n4\n+',
+        ];
+
+        expect(splitIntoColumnsPadded(input)).toEqual(expected);
+    });
 });
 
 describe('Real input tests', () => {
@@ -62,6 +79,11 @@ describe('Real input tests', () => {
     });
 
     it('part two', () => {
+        const columns = splitIntoColumnsPadded(lines);
+        const results = columns.map(column => performOperation(column));
+        const sum = results.reduce((acc, curr) => acc + curr, 0);
+        
+        console.log('Part two solution:', sum);
         expect(true).toBe(true);
     });
 });
