@@ -35,3 +35,25 @@ export type Location = {
     row: number;
     col: number;
 }
+
+export function allTimelinesCount(path: string[]): number {
+    let beam = new Beam();
+    beam.processPath(path);
+
+    console.log('Total locations:', beam.locations);
+    const locations = beam.locations.splice(1).filter((loc, index, self) =>
+        index === self.findIndex((t) => (
+            t.row === loc.row && t.col === loc.col
+        )) && loc.row % 2 === 0
+    );
+    
+    let count = 0;
+    const uniqueRowIndexes = Array.from(new Set(locations.map(loc => loc.row)));
+
+    for (let uniqueRow of uniqueRowIndexes) {
+        const rowLocations = locations.filter(loc => loc.row === uniqueRow);
+        count += rowLocations.length;
+    }
+    
+    return count;
+}

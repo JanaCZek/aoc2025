@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { readFileSync } from 'fs';
-import { Beam } from './main';
+import { allTimelinesCount, Beam } from './main';
 
 // Run using "npm run test"
 describe('Tachyon beam tests', () => {
@@ -58,25 +58,43 @@ describe('Tachyon beam tests', () => {
         expect(passThroughOne).toEqual({ row: 3, col: 6 });
         expect(passThroughTwo).toEqual({ row: 3, col: 8 });
     });
-});
 
-describe('Real input tests', () => {
-    let lines: string[] = [];
-
-    beforeAll(() => {
-        const data = readFileSync('../input.txt', 'utf-8');
-        lines = data.trim().split('\n');
-    });
-
-    it('part one', () => {
+    it('provides split count', () => {
         let beam = new Beam();
-        beam.processPath(lines);
-
-        console.log('Part one solution:', beam.splitCount);
-        expect(true).toBe(true);
+        beam.processPath(path);
+        expect(beam.splitCount).toEqual(21);
     });
 
-    it('part two', () => {
-        expect(true).toBe(true);
+    it('counts all alternate paths', () => {
+        const count = allTimelinesCount(path);
+        expect(count).toEqual(40);
     });
 });
+
+// describe('Real input tests', () => {
+//     let lines: string[] = [];
+
+//     beforeEach(() => {
+//         const data = readFileSync('../input.txt', 'utf-8');
+//         lines = data.trim().split('\n');
+//     });
+
+//     it('part one', () => {
+//         let beam = new Beam();
+//         beam.processPath(lines);
+
+//         console.log('Part one solution:', beam.splitCount);
+//         expect(true).toBe(true);
+
+//         for (let loc of beam.locations) {
+//             lines[loc.row] = lines[loc.row].substring(0, loc.col) + '|' + lines[loc.row].substring(loc.col + 1);
+//         }
+//         console.log(lines.join('\n'));
+//     });
+
+//     it('part two', () => {
+//         const count = allTimelinesCount(lines);
+//         console.log('Part two solution:', count);
+//         expect(true).toBe(true);
+//     });
+// });
