@@ -29,6 +29,45 @@ export class Beam {
             ++lineIndex;
         }
     }
+
+    processAllPaths(path: string[]): number {
+        const start = path[0].indexOf('S');
+
+        let pendingLocations: Location[] = [{ row: 1, col: start }];
+
+        const noPassthroughs = path.filter(line => line.includes('^'));
+        
+        let lineIndex = 2;
+
+        for (let line of noPassthroughs) {
+            const splitIndexes = line.split('').map((char, idx) => char === '^' ? idx : -1).filter(idx => idx !== -1);
+            let newPendingLocations: Location[] = [];
+
+            const toSplit = pendingLocations.filter(loc => splitIndexes.includes(loc.col));
+            const toPassThrough = pendingLocations.filter(loc => !splitIndexes.includes(loc.col));
+
+            // console.log('tosplit', toSplit.length);
+            // console.log('topassthrough', toPassThrough.length);
+
+            // console.log('To split: ', toSplit);
+            for (let loc of toSplit) {
+                newPendingLocations.push({ row: lineIndex, col: loc.col - 1 });
+                newPendingLocations.push({ row: lineIndex, col: loc.col + 1 });
+            }
+            
+            for (let loc of toPassThrough) {
+                newPendingLocations.push(loc);
+            }
+            
+            // console.log('newPendingLocations: ', newPendingLocations);
+
+            ++lineIndex;
+
+            pendingLocations = newPendingLocations;
+        }
+
+        return pendingLocations.length;
+    }
 }
 
 export type Location = {
@@ -40,13 +79,12 @@ export function allTimelinesCount(path: string[]): number {
     let beam = new Beam();
     beam.processPath(path);
 
-    console.log('Total locations:', beam.locations);
     const locations = beam.locations.splice(1).filter((loc, index, self) =>
         index === self.findIndex((t) => (
             t.row === loc.row && t.col === loc.col
         )) && loc.row % 2 === 0
     );
-    
+
     let count = 0;
     const uniqueRowIndexes = Array.from(new Set(locations.map(loc => loc.row)));
 
@@ -54,6 +92,6 @@ export function allTimelinesCount(path: string[]): number {
         const rowLocations = locations.filter(loc => loc.row === uniqueRow);
         count += rowLocations.length;
     }
-    
+
     return count;
 }
