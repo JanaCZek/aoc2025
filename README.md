@@ -46,7 +46,7 @@
 - Devcontainers are cool and save time
 
 ### Day 5
-- Language TBD, probably Python
+- Python
 
 **Practice** 
 - Planning AI agent in VS Code
@@ -70,6 +70,15 @@
 - Sometimes the regular agent mode can be better at making a plan than the dedicated Plan agent
 
 ### Day 7
+- Typescript
+
+**Practice** 
+- TDD in Typescript
+
+**Lessons learned**
+- Did part one quite fast, but got stuck at part two - set of in the wrong direction - next time try implementing the task as the description tries to guide you and don't come up with anything clever
+
+### Day 8
 - Language TBD
 
 **Practice** 

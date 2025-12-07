@@ -91,11 +91,6 @@ describe('Real input tests', () => {
 
         console.log('Part one solution:', beam.splitCount);
         expect(true).toBe(true);
-
-        // for (let loc of beam.locations) {
-        //     lines[loc.row] = lines[loc.row].substring(0, loc.col) + '|' + lines[loc.row].substring(loc.col + 1);
-        // }
-        // console.log(lines.join('\n'));
     });
 
     it('part two', () => {

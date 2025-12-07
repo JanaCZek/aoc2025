@@ -33,7 +33,7 @@ export class Beam {
     processAllPaths(path: string[]): number {
         const start = path[0].indexOf('S');
 
-        let pendingLocations: Location[] = [{ row: 1, col: start }];
+        let pendingLocations: CountedLocation[] = [{ row: 1, col: start, count: 1 }];
 
         const noPassthroughs = path.filter(line => line.includes('^'));
         
@@ -41,38 +41,49 @@ export class Beam {
 
         for (let line of noPassthroughs) {
             const splitIndexes = line.split('').map((char, idx) => char === '^' ? idx : -1).filter(idx => idx !== -1);
-            let newPendingLocations: Location[] = [];
+            let newPendingLocations: CountedLocation[] = [];
 
             const toSplit = pendingLocations.filter(loc => splitIndexes.includes(loc.col));
             const toPassThrough = pendingLocations.filter(loc => !splitIndexes.includes(loc.col));
 
-            // console.log('tosplit', toSplit.length);
-            // console.log('topassthrough', toPassThrough.length);
-
-            // console.log('To split: ', toSplit);
             for (let loc of toSplit) {
-                newPendingLocations.push({ row: lineIndex, col: loc.col - 1 });
-                newPendingLocations.push({ row: lineIndex, col: loc.col + 1 });
+                const existingLeft = newPendingLocations.find(l => l.row === lineIndex && l.col === loc.col - 1);
+                if (existingLeft) {
+                    existingLeft.count += loc.count;
+                }
+                else {
+                    newPendingLocations.push({ row: lineIndex, col: loc.col - 1, count: loc.count });
+                }
+                const existingRight = newPendingLocations.find(l => l.row === lineIndex && l.col === loc.col + 1);
+                if (existingRight) {
+                    existingRight.count += loc.count;
+                }
+                else {
+                    newPendingLocations.push({ row: lineIndex, col: loc.col + 1, count: loc.count });
+                }
             }
             
             for (let loc of toPassThrough) {
                 newPendingLocations.push(loc);
             }
-            
-            // console.log('newPendingLocations: ', newPendingLocations);
 
             ++lineIndex;
 
             pendingLocations = newPendingLocations;
         }
 
-        return pendingLocations.length;
+        const counts = pendingLocations.map(loc => loc.count);
+        return counts.reduce((a, b) => a + b, 0);
     }
 }
 
 export type Location = {
     row: number;
     col: number;
+}
+
+export type CountedLocation = Location & {
+    count: number;
 }
 
 export function allTimelinesCount(path: string[]): number {
