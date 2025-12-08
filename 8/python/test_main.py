@@ -101,6 +101,16 @@ def product_of_sizes_of_three_largest_junctions(input, n = 10):
     sizes = get_sizes_of_n_largest_connections(connections, 3)
     return sizes[0] * sizes[1] * sizes[2]
 
+def product_of_last_two_x_coordinates(input):
+    coords = [convert_string_to_3d_coordinate(line) for line in input.splitlines()]
+    distance_matrix = create_matrix_of_distances(coords)
+    index_pairs = get_pair_indexes_sorted_by_shortest_distance(distance_matrix)
+    final_pair = create_single_connection(index_pairs)
+
+    last_x = coords[final_pair[0]][0]
+    previous_x = coords[final_pair[1]][0]
+    return last_x * previous_x
+
 def eucleidian_distance(point_1, point_2):    
     p1 = np.array(point_1)
     p2 = np.array(point_2)
@@ -169,14 +179,60 @@ def create_connections(index_pairs, num_connections):
         connection_to_remove = second_connection if len(first_connection) >= len(second_connection) else first_connection
         index_to_add = first_index if first_index not in connection_to_update else second_index
 
-        # print("Connections made so far:", connections_made)
-        # print("Processing pair:", pair)
-        # print("Current connections:", connections)
-        # print("First connection:", first_connection)
-        # print("Second connection:", second_connection)
-        # print("Connection to update:", connection_to_update)
-        # print("Connection to remove:", connection_to_remove)
-        # print("Index to add:", index_to_add)
+        if existing_connection is None:
+            if connection_to_update is not None:
+                connections.remove(connection_to_remove)
+                connections.remove(connection_to_update)
+                connection_to_update += connection_to_remove
+
+                connections.append(connection_to_update)
+
+            connections_made += 1
+        else:
+            if index_to_add not in existing_connection:
+                connections.remove(existing_connection)
+                existing_connection += connection_to_remove
+
+                connections.remove(connection_to_update)
+                connections.append(existing_connection)
+            connections_made += 1
+
+    for connection in connections:
+        connection.sort()
+
+    return connections
+
+def create_single_connection(index_pairs):    
+    connections = []
+    unique_indexes = []
+    for pair in index_pairs:
+        if pair[0] not in unique_indexes:
+            unique_indexes.append(pair[0])
+        if pair[1] not in unique_indexes:   
+            unique_indexes.append(pair[1])
+
+    connections = [[index] for index in unique_indexes]
+    final_pair = index_pairs[0]
+
+    connections_made = 0
+    for pair in index_pairs:
+        first_index = pair[0]
+        second_index = pair[1]
+
+        existing_connection = None
+        first_connection = None
+        second_connection = None
+        for connection in connections:
+            if first_index in connection and second_index in connection:
+                existing_connection = connection
+            if first_index in connection:
+                first_connection = connection
+            if second_index in connection:
+                second_connection = connection
+
+        connection_to_update = first_connection if len(first_connection) >= len(second_connection) else second_connection
+        connection_to_remove = second_connection if len(first_connection) >= len(second_connection) else first_connection
+        index_to_add = first_index if first_index not in connection_to_update else second_index
 
         if existing_connection is None:
             if connection_to_update is not None:
@@ -196,11 +252,11 @@ def create_connections(index_pairs, num_connections):
                 connections.append(existing_connection)
             connections_made += 1
 
-    # Sort each connection's indexes
-    for connection in connections:
-        connection.sort()
+        if len(connections) == 1:
+            final_pair = pair
+            break
 
-    return connections
+    return final_pair
 
 def get_sizes_of_n_largest_connections(connections, n):
     sizes = sorted([len(connection) for connection in connections], reverse=True)[:n]
@@ -210,6 +266,13 @@ def test_input_part_one():
     with open(r"c:/Projects/playground/aoc2025/8/input.txt", encoding='utf-8') as f:
         input_str = f.read()
         result = product_of_sizes_of_three_largest_junctions(input_str, 1000)
+        print("Final result:", result)
+    assert True
+    
+def test_input_part_two():
+    with open(r"c:/Projects/playground/aoc2025/8/input.txt", encoding='utf-8') as f:
+        input_str = f.read()
+        result = product_of_last_two_x_coordinates(input_str)
         print("Final result:", result)
     assert True
     

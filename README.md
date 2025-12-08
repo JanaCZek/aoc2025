@@ -79,7 +79,13 @@
 - Did part one quite fast, but got stuck at part two - set of in the wrong direction - next time try implementing the task as the description tries to guide you and don't come up with anything clever
 
 ### Day 8
-- Language TBD
+- Python
+
+**Practice** 
+- TDD in Python
+
+### Day 9
+- Rust
 
 **Practice** 
 - Try implementing any of the previous tasks in SQL, for shits and giggles
