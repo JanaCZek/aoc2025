@@ -112,10 +112,6 @@ pub fn only_contains_green_or_red_tiles(
     let y_start = std::cmp::min(coords_one.1, coords_two.1);
     let y_end = std::cmp::max(coords_one.1, coords_two.1);
 
-    // println!("Checking area from ({},{}) to ({},{})", x_start, y_start, x_end, y_end);
-    // println!("Red tiles: {:?}", red_tile_coords);
-    // println!("Green tiles: {:?}", green_tile_coords);
-
     for x in x_start..=x_end {
         for y in y_start..=y_end {
             let coord = (x, y);
@@ -136,28 +132,31 @@ pub fn create_matrix_of_limited_areas(
 
     let disallowed_coord_ranges = create_disallowed_ranges(coords, green_tile_coords);
 
-    for i in 0..coords.len() {
-        let mut row: Vec<u64> = Vec::new();
+    use rayon::prelude::*;
+    let mut rows: Vec<Vec<u64>> = vec![Vec::new(); coords.len()];
+    let max_area_mutex = std::sync::Mutex::new(0u64);
+
+    rows.par_iter_mut().enumerate().for_each(|(i, row)| {
         for j in 0..coords.len() {
             let corner_coords = get_all_corner_coords_of_rectangle(coords[i], coords[j]);
-            let mut contains_disallowed = false;
-            if is_rectangle_disallowed(&corner_coords, &disallowed_coord_ranges) {
-                contains_disallowed = true;
-            }
+            let contains_disallowed = is_rectangle_disallowed(&corner_coords, &disallowed_coord_ranges);
             let area = if contains_disallowed {
                 0
             } else {
                 calculate_area(coords[i], coords[j])
             };
-            if area > max_area {
-                max_area = area;
+            {
+                let mut max_area_guard = max_area_mutex.lock().unwrap();
+                if area > *max_area_guard {
+                    *max_area_guard = area;
+                }
             }
             row.push(area);
-            println!("Completed cell {} out of {}", j + 1, coords.len());
         }
-        matrix.push(row);
-        println!("Completed row {}/{}", i + 1, coords.len());
-    }
+    });
+
+    matrix = rows;
+    max_area = *max_area_mutex.lock().unwrap();
 
     (matrix, max_area)
 }
@@ -362,7 +361,6 @@ pub fn is_vertical_range_disallowed(
     range: &VerticalRange,
     disallowed_ranges: &Vec<((u64, u64), (u64, u64))>,
 ) -> bool {
-    // println!("Disallowed: {disallowed_ranges:?}");
 
     let ranges = [range.start.1..=range.end.1]
         .iter()
@@ -373,16 +371,12 @@ pub fn is_vertical_range_disallowed(
         })
         .collect::<Vec<_>>();
 
-    // println!("Vertical range: {:?}, Disallowed ranges on line: {:?}", range, ranges);
-
     let y_coord = range.start.0;
 
     let filtered_ranges = ranges
         .into_iter()
         .filter(|r| r.0.0 <= y_coord && r.1.0 >= y_coord)
         .collect::<Vec<_>>();
-
-    // println!("Filtered ranges: {:?}", filtered_ranges);
 
     !filtered_ranges.is_empty()
 }
@@ -398,10 +392,6 @@ pub fn is_rectangle_disallowed(
     let bottom_disallowed = is_horizontal_range_disallowed(&bottom_horizontal, disallowed_ranges);
     let left_disallowed = is_vertical_range_disallowed(&left_vertical, disallowed_ranges);
     let right_disallowed = is_vertical_range_disallowed(&right_vertical, disallowed_ranges);
-
-    // println!(
-    //     "Top disallowed: {top_disallowed}, Bottom disallowed: {bottom_disallowed}, Left disallowed: {left_disallowed}, Right disallowed: {right_disallowed}"
-    // );
 
     top_disallowed || bottom_disallowed || left_disallowed || right_disallowed
 }

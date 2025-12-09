@@ -1,3 +1,5 @@
+use std::fs;
+
 use aoc_day_9::{
     HorizontalRange, RectangleCornerCoordinates, VerticalRange, get_all_corner_coords_of_rectangle,
 };
@@ -168,8 +170,6 @@ fn test_creates_disallowed_coordinate_ranges() {
 
     let disallowed_coord_ranges =
         aoc_day_9::create_disallowed_ranges(&red_tile_coords, &green_tile_coords);
-
-    println!("Disallowed coord ranges: {disallowed_coord_ranges:?}");
 
     for coord in should_contain {
         assert!(disallowed_coord_ranges.contains(&coord));
@@ -462,26 +462,13 @@ fn test_is_rectangle_disallowed() {
     }
 }
 
-// #[test]
-// fn input_test_part_one() {
-//     let contents = fs::read_to_string("C:\\Projects\\playground\\aoc2025\\9\\input.txt").unwrap();
+#[test]
+fn input_test_part_one() {
+    let contents = fs::read_to_string("C:\\Projects\\playground\\aoc2025\\9\\input.txt").unwrap();
 
-//     let mut coords = aoc_day_9::parse_strings_to_coordinates(&contents);
-//     let (matrix, max_area) = aoc_day_9::create_matrix_of_areas(&coords);
+    let mut coords = aoc_day_9::parse_strings_to_coordinates(&contents);
+    let (matrix, max_area) = aoc_day_9::create_matrix_of_areas(&coords);
 
-//     println!("Max area: {}", max_area);
-//     assert_eq!(true, true);
-// }
-
-// #[test]
-// fn input_test_part_two() {
-//     let contents = fs::read_to_string("C:\\Projects\\playground\\aoc2025\\9\\input.txt").unwrap();
-
-//     let red_tile_coords = aoc_day_9::parse_strings_to_coordinates(&contents);
-//     let green_tile_coords = aoc_day_9::create_green_tiles(&red_tile_coords);
-
-//     let (_, max_area) = aoc_day_9::create_matrix_of_limited_areas(&red_tile_coords, &green_tile_coords);
-
-//     println!("Max area: {}", max_area);
-//     assert_eq!(true, true);
-// }
+    println!("Max area: {}", max_area);
+    assert_eq!(true, true);
+}

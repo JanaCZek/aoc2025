@@ -88,4 +88,16 @@
 - Rust
 
 **Practice** 
+- TDD in Rust
+
+**Lessons learned**
+- This one was very difficult for me, the second part. I didn't really understand the requirements at first, so had to go back and forth using tests
+- TDD proved most valuable here, because as I was making changes, I was sure I did not break anything that worked before. This has only shown me that my original idea to skip tests and do more debugging could prove fatal here. The real answer is to use a combination
+- Performance optimizations were necessary on this one. A huge time saver was achieved in `is_vertical_range_disallowed()`. When I only used the filtered disallowed ranges, the speedup was very large
+- Github Copilot was again of great help - mainly with syntax, but for smaller function also with the entire logic. It helps to have a descriptive name for the function for one, your future self, and two, for context for Copilot
+
+### Day 10
+- C#
+
+**Practice** 
 - Try implementing any of the previous tasks in SQL, for shits and giggles
