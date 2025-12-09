@@ -327,7 +327,7 @@ fn test_detects_disallowed_horizontal_ranges() {
 
 #[test]
 fn test_detects_disallowed_vertical_ranges() {
-    let disallowed_ranges = vec![((2, 2), (6, 2)), ((1, 3), (4, 3))];
+    let disallowed_ranges = vec![((2, 2), (6, 2)), ((1, 3), (4, 3)), ((2, 6), (8, 6))];
 
     let disallowed = vec![
         VerticalRange {
@@ -346,6 +346,10 @@ fn test_detects_disallowed_vertical_ranges() {
             start: (6, 2),
             end: (6, 3),
         },
+        VerticalRange {
+            start: (2, 5),
+            end: (2, 7),
+        },
     ];
 
     let allowed = vec![VerticalRange {
@@ -355,12 +359,12 @@ fn test_detects_disallowed_vertical_ranges() {
 
     for range in disallowed {
         let result = aoc_day_9::is_vertical_range_disallowed(&range, &disallowed_ranges);
-        assert!(result);
+        assert!(result, "Range {range:?} was expected to be disallowed");
     }
 
     for range in allowed {
         let result = aoc_day_9::is_vertical_range_disallowed(&range, &disallowed_ranges);
-        assert!(!result);
+        assert!(!result, "Range {range:?} was expected to be allowed");
     }
 }
 
@@ -384,18 +388,77 @@ fn test_is_rectangle_disallowed() {
     let disallowed_rectangles = vec![
         get_all_corner_coords_of_rectangle((11, 1), (2, 3)),
         get_all_corner_coords_of_rectangle((2, 5), (9, 7)),
+        get_all_corner_coords_of_rectangle((7, 1), (9, 7)),
     ];
 
     let allowed_rectangles = vec![get_all_corner_coords_of_rectangle((7, 3), (11, 1))];
 
     for rectangle in disallowed_rectangles {
         let result = aoc_day_9::is_rectangle_disallowed(&rectangle, &disallowed_coord_ranges);
-        // assert!(result, "Rectangle {rectangle:?} was expected to be disallowed");
+        assert!(
+            result,
+            "Rectangle {rectangle:?} was expected to be disallowed"
+        );
     }
 
     for rectangle in allowed_rectangles {
         let result = aoc_day_9::is_rectangle_disallowed(&rectangle, &disallowed_coord_ranges);
-        // assert!(!result, "Rectangle {rectangle:?} was expected to be allowed");
+        assert!(
+            !result,
+            "Rectangle {rectangle:?} was expected to be allowed"
+        );
+    }
+
+    let input = "7,1
+11,1
+11,9
+2,9
+2,7
+9,7
+9,5
+2,5
+2,3
+7,3";
+
+    // Visualize input
+    let red_tile_coords = aoc_day_9::parse_strings_to_coordinates(input);
+    let green_tile_coords =
+        aoc_day_9::create_green_tiles_between_adjacent_red_tiles(&red_tile_coords);
+    let (width, height) = red_tile_coords
+        .iter()
+        .fold((0, 0), |(w, h), (x, y)| (w.max(*x), h.max(*y)));
+    let grid = vec![vec!['.'; width as usize + 1]; height as usize + 1];
+    // Join by newline
+    let rows = grid.iter().enumerate().map(|(y, row)| {
+        let row_str: String = row
+            .iter()
+            .enumerate()
+            .map(|(x, _)| {
+                if red_tile_coords.contains(&(x as u64, y as u64)) {
+                    'R'
+                } else if green_tile_coords.contains(&(x as u64, y as u64)) {
+                    'G'
+                } else {
+                    '.'
+                }
+            })
+            .collect();
+        row_str
+    });
+
+    println!("Grid:\n{}", rows.collect::<Vec<String>>().join("\n"));
+
+    let disallowed_coord_ranges =
+        aoc_day_9::create_disallowed_ranges(&red_tile_coords, &green_tile_coords);
+
+    let disallowed_rectangles = vec![get_all_corner_coords_of_rectangle((2, 5), (9, 7))];
+
+    for rectangle in disallowed_rectangles {
+        let result = aoc_day_9::is_rectangle_disallowed(&rectangle, &disallowed_coord_ranges);
+        assert!(
+            result,
+            "Rectangle {rectangle:?} was expected to be disallowed"
+        );
     }
 }
 

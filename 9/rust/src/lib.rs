@@ -1,5 +1,3 @@
-use std::fs;
-
 pub fn parse_strings_to_coordinates(input: &str) -> Vec<(u64, u64)> {
     input
         .lines()
@@ -64,6 +62,45 @@ pub fn create_green_tiles(red_tile_coords: &[(u64, u64)]) -> Vec<(u64, u64)> {
     green_tile_coords
 }
 
+pub fn create_green_tiles_between_adjacent_red_tiles(
+    red_tile_coords: &[(u64, u64)],
+) -> Vec<(u64, u64)> {
+    let mut green_tile_coords: Vec<(u64, u64)> = Vec::new();
+
+    for i in 0..(red_tile_coords.len() - 1) {
+        create_green_connections(red_tile_coords, &mut green_tile_coords, i, i + 1);
+    }
+
+    // connect last pair to first pair
+    create_green_connections(
+        red_tile_coords,
+        &mut green_tile_coords,
+        red_tile_coords.len() - 1,
+        0,
+    );
+
+    green_tile_coords
+}
+
+fn create_green_connections(
+    red_tile_coords: &[(u64, u64)],
+    green_tile_coords: &mut Vec<(u64, u64)>,
+    first_index: usize,
+    second_index: usize,
+) {
+    let coord_one = red_tile_coords[first_index];
+    let coord_two = red_tile_coords[second_index];
+    if coord_one.0 == coord_two.0 {
+        let y_start = std::cmp::min(coord_one.1, coord_two.1);
+        let y_end = std::cmp::max(coord_one.1, coord_two.1);
+        green_tile_coords.extend((y_start + 1..y_end).map(|y| (coord_one.0, y)));
+    } else if coord_one.1 == coord_two.1 {
+        let x_start = std::cmp::min(coord_one.0, coord_two.0);
+        let x_end = std::cmp::max(coord_one.0, coord_two.0);
+        green_tile_coords.extend((x_start + 1..x_end).map(|x| (x, coord_one.1)));
+    }
+}
+
 pub fn only_contains_green_or_red_tiles(
     coords_one: (u64, u64),
     coords_two: (u64, u64),
@@ -102,11 +139,10 @@ pub fn create_matrix_of_limited_areas(
     for i in 0..coords.len() {
         let mut row: Vec<u64> = Vec::new();
         for j in 0..coords.len() {
-            let all_coords = get_all_perimeter_coords_of_rectangle(coords[i], coords[j]);
+            let corner_coords = get_all_corner_coords_of_rectangle(coords[i], coords[j]);
             let mut contains_disallowed = false;
-            if is_any_coord_disallowed(&all_coords, &disallowed_coord_ranges) {
+            if is_rectangle_disallowed(&corner_coords, &disallowed_coord_ranges) {
                 contains_disallowed = true;
-                break;
             }
             let area = if contains_disallowed {
                 0
@@ -117,7 +153,7 @@ pub fn create_matrix_of_limited_areas(
                 max_area = area;
             }
             row.push(area);
-            println!("Completed cell ({}, {})", i + 1, j + 1);
+            println!("Completed cell {} out of {}", j + 1, coords.len());
         }
         matrix.push(row);
         println!("Completed row {}/{}", i + 1, coords.len());
@@ -149,26 +185,31 @@ pub fn create_disallowed_ranges(
         .min()
         .unwrap_or(0);
 
-    let mut current_y = None;
-    let mut x_coords_at_current_y: Vec<u64> = Vec::new();
-    for coord in coords_sorted_by_y {
-        if Some(coord.1) != current_y {
-            if let Some(y) = current_y {
-                if !x_coords_at_current_y.is_empty() {
-                    let min_x = *x_coords_at_current_y.iter().min().unwrap();
-                    let max_x = *x_coords_at_current_y.iter().max().unwrap();
-                    if min_x > min_global_x {
-                        disallowed_ranges.push(((min_global_x, y), (min_x - 1, y)));
-                    }
-                    if max_x < max_global_x {
-                        disallowed_ranges.push(((max_x + 1, y), (max_global_x, y)));
-                    }
+    // Collect all y values present in the input
+    let mut y_to_xs: std::collections::HashMap<u64, Vec<u64>> = std::collections::HashMap::new();
+    for &(x, y) in red_tile_coords.iter().chain(green_tile_coords.iter()) {
+        y_to_xs.entry(y).or_default().push(x);
+    }
+
+    let min_global_y = y_to_xs.keys().min().cloned().unwrap_or(0);
+    let max_global_y = y_to_xs.keys().max().cloned().unwrap_or(0);
+
+    for y in min_global_y..=max_global_y {
+        if let Some(xs) = y_to_xs.get(&y) {
+            if !xs.is_empty() {
+                let min_x = *xs.iter().min().unwrap();
+                let max_x = *xs.iter().max().unwrap();
+                if min_x > min_global_x {
+                    disallowed_ranges.push(((min_global_x, y), (min_x - 1, y)));
+                }
+                if max_x < max_global_x {
+                    disallowed_ranges.push(((max_x + 1, y), (max_global_x, y)));
                 }
             }
-            current_y = Some(coord.1);
-            x_coords_at_current_y.clear();
+        } else {
+            // No tiles at this y, so the whole x range is disallowed
+            disallowed_ranges.push(((min_global_x, y), (max_global_x, y)));
         }
-        x_coords_at_current_y.push(coord.0);
     }
 
     // Sort each range so that the smaller x comes first
@@ -265,7 +306,14 @@ pub struct VerticalRange {
     pub end: (u64, u64),
 }
 
-pub fn get_ranges_from_rectangle(rect: &RectangleCornerCoordinates) -> (HorizontalRange, HorizontalRange, VerticalRange, VerticalRange) {
+pub fn get_ranges_from_rectangle(
+    rect: &RectangleCornerCoordinates,
+) -> (
+    HorizontalRange,
+    HorizontalRange,
+    VerticalRange,
+    VerticalRange,
+) {
     let top_horizontal = HorizontalRange {
         start: (rect.top_left.0, rect.top_left.1),
         end: (rect.top_right.0, rect.top_right.1),
@@ -282,39 +330,59 @@ pub fn get_ranges_from_rectangle(rect: &RectangleCornerCoordinates) -> (Horizont
         start: (rect.top_right.0, rect.top_right.1),
         end: (rect.bottom_right.0, rect.bottom_right.1),
     };
-    
-    (top_horizontal, bottom_horizontal, left_vertical, right_vertical)
+
+    (
+        top_horizontal,
+        bottom_horizontal,
+        left_vertical,
+        right_vertical,
+    )
 }
 
-pub fn is_horizontal_range_disallowed(range: &HorizontalRange, disallowed_ranges: &Vec<((u64, u64), (u64, u64))>) -> bool {
+pub fn is_horizontal_range_disallowed(
+    range: &HorizontalRange,
+    disallowed_ranges: &Vec<((u64, u64), (u64, u64))>,
+) -> bool {
     let ranges_on_line = disallowed_ranges
         .iter()
         .filter(|r| r.0.1 == range.start.1)
         .collect::<Vec<&((u64, u64), (u64, u64))>>();
 
     for disallowed_range in ranges_on_line {
-        if (range.start.0 >= disallowed_range.0.0 && range.start.0 <= disallowed_range.1.0) ||
-            (range.end.0 >= disallowed_range.0.0 && range.end.0 <= disallowed_range.1.0) {
-                return true;
-            }
+        if (range.start.0 >= disallowed_range.0.0 && range.start.0 <= disallowed_range.1.0)
+            || (range.end.0 >= disallowed_range.0.0 && range.end.0 <= disallowed_range.1.0)
+        {
+            return true;
+        }
     }
     false
 }
 
-pub fn is_vertical_range_disallowed(range: &VerticalRange, disallowed_ranges: &Vec<((u64, u64), (u64, u64))>) -> bool {
-    let ranges = [range.start.1..range.end.1].iter().flat_map(|line| {
-        disallowed_ranges
-            .iter()
-            .filter(|r| r.0.1 == line.start || r.0.1 == line.end)
-    })
-    .collect::<Vec<_>>();
+pub fn is_vertical_range_disallowed(
+    range: &VerticalRange,
+    disallowed_ranges: &Vec<((u64, u64), (u64, u64))>,
+) -> bool {
+    // println!("Disallowed: {disallowed_ranges:?}");
+
+    let ranges = [range.start.1..=range.end.1]
+        .iter()
+        .flat_map(|line| {
+            disallowed_ranges
+                .iter()
+                .filter(|r| r.0.1 >= *line.start() && r.0.1 <= *line.end())
+        })
+        .collect::<Vec<_>>();
+
+    // println!("Vertical range: {:?}, Disallowed ranges on line: {:?}", range, ranges);
 
     let y_coord = range.start.0;
 
-    let filtered_ranges = ranges.into_iter().filter(|r| {
-        r.0.0 <= y_coord && r.1.0 >= y_coord
-    })
-    .collect::<Vec<_>>();
+    let filtered_ranges = ranges
+        .into_iter()
+        .filter(|r| r.0.0 <= y_coord && r.1.0 >= y_coord)
+        .collect::<Vec<_>>();
+
+    // println!("Filtered ranges: {:?}", filtered_ranges);
 
     !filtered_ranges.is_empty()
 }
@@ -331,10 +399,9 @@ pub fn is_rectangle_disallowed(
     let left_disallowed = is_vertical_range_disallowed(&left_vertical, disallowed_ranges);
     let right_disallowed = is_vertical_range_disallowed(&right_vertical, disallowed_ranges);
 
-    println!("Checking rectangle: {rect:?}");
-    println!(
-        "Top: {top_disallowed}, Bottom: {bottom_disallowed}, Left: {left_disallowed}, Right: {right_disallowed}"
-    );
+    // println!(
+    //     "Top disallowed: {top_disallowed}, Bottom disallowed: {bottom_disallowed}, Left disallowed: {left_disallowed}, Right disallowed: {right_disallowed}"
+    // );
 
     top_disallowed || bottom_disallowed || left_disallowed || right_disallowed
 }
