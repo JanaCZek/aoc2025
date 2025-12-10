@@ -134,8 +134,13 @@ def test_hillclimber_joltage_machine_one():
 
     print("ONE Best button press count found:", best_button_press_count)
     print("Best individual:", best)
+    
+    resulting_state = increase_joltage(best, current_state)
+    diff = [abs(resulting_state[i] - desired_state[i]) for i in range(len(desired_state))]
+    print("Diff from desired state:", diff)
 
     assert best_button_press_count == 10
+    assert diff == [0] * len(desired_state)
 
 def test_hillclimber_joltage_machine_two():
     button_sets = [
@@ -153,7 +158,12 @@ def test_hillclimber_joltage_machine_two():
     print("TWO Best button press count found:", best_button_press_count)
     print("Best individual:", best)
 
+    resulting_state = increase_joltage(best, current_state)
+    diff = [abs(resulting_state[i] - desired_state[i]) for i in range(len(desired_state))]
+    print("Diff from desired state:", diff)
+
     assert best_button_press_count == 12
+    assert diff == [0] * len(desired_state)
 
 def test_hillclimber_joltage_machine_three():
     button_sets = [
@@ -170,7 +180,12 @@ def test_hillclimber_joltage_machine_three():
     print("THREE Best button press count found:", best_button_press_count)
     print("Best individual:", best)
 
+    resulting_state = increase_joltage(best, current_state)
+    diff = [abs(resulting_state[i] - desired_state[i]) for i in range(len(desired_state))]
+    print("Diff from desired state:", diff)
+
     assert best_button_press_count == 11
+    assert diff == [0] * len(desired_state)
 
 def hillclimber_button_press_count(button_sets, current_state, desired_state):
     # button_sets: [[0, 1, 2], [1, 3], ...]
@@ -228,10 +243,10 @@ def hillclimber_button_press_count(button_sets, current_state, desired_state):
 
 def hillclimber_joltage_button_press_count(button_sets, current_state, desired_state):
 
-    population_size = 600
-    stddev_size = 4
+    population_size = 30
+    stddev_size = 2
     population = create_population_joltage(button_sets, population_size, None, stddev_size)
-    generations_count = 500
+    generations_count = 10
     generation = 0
     retry_count = 0
 
@@ -377,6 +392,21 @@ def create_population_joltage(button_sets, population_size, best_individual, std
             selected_button_sets = [button_sets[index] for index in selected_button_set_indexes]
             population.append(selected_button_sets)
             
+    unique_population = []
+    for individual in population:
+        if individual not in unique_population:
+            unique_population.append(individual)
+    population = unique_population
+
+    mean_size = len(best_individual) if best_individual is not None else int(len(button_sets) / 2)
+    while len(population) < population_size:
+        individual_size = int(np.random.normal(mean_size, stddev_size))
+        individual_size = np.clip(individual_size, 1, mean_size + stddev_size)
+
+        selected_button_set_indexes = np.random.randint(0, len(button_sets), size=individual_size)
+        selected_button_sets = [button_sets[index] for index in selected_button_set_indexes]
+        population.append(selected_button_sets)
+        
     return population
 
 def parse_line_to_machine(line):
