@@ -96,6 +96,20 @@ def test_fitness_function():
 
     assert best_score > worse_score
 
+def test_fitness_function_joltage():
+    current_state = [0, 0, 0, 0]
+    desired_state = [1, 1, 1, 1]
+
+    button_press_count = 1
+    worse_score = fitness_function_joltage(button_press_count, current_state, desired_state)
+
+    current_state = [1, 1, 1, 1]
+
+    button_press_count = 1
+    best_score = fitness_function_joltage(button_press_count, current_state, desired_state)
+
+    assert best_score > worse_score
+
 def test_joltage_parsing():
     line = "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"
 
@@ -318,17 +332,17 @@ def fitness_function(button_press_count, current_state, desired_state):
 
 def fitness_function_joltage(button_press_count, current_state, desired_state):
     button_state_match_score = 100
-    # button_press_count_penalty_multiplier = 0.9
+    button_press_count_penalty_multiplier = 0.9
     score = 0
 
     for i in range(len(current_state)):
-        diff = abs(current_state[i] - desired_state[i])
+        diff = abs(current_state[i] - desired_state[i]) + 1
         if diff == 0:
             score += button_state_match_score
         else:
             score += button_state_match_score / diff
 
-    # score -= button_press_count * button_press_count_penalty_multiplier
+    score -= button_press_count * button_press_count_penalty_multiplier
 
     return score
 
@@ -471,9 +485,34 @@ def print_hillclimber_data(population, fitness_scores, desired_state):
 #         for line in f:
 #             desired_state, button_sets = parse_line_to_machine(line.strip())
 #             current_state = [False] * len(desired_state)
-#             best_button_press_count, best_individual = hillclimber_button_press_count(button_sets, current_state, desired_state)
-#             print("Best button press count found for line:", best_button_press_count)
-#             total_counts += best_button_press_count
+
+#             all_results = []
+#             for _ in range(10):
+#                 best_button_press_count, best_individual = hillclimber_button_press_count(button_sets, current_state, desired_state)
+#                 all_results.append(best_button_press_count)
+
+#             best = min(all_results)
+#             print("Best button press count found for line:", best)
+#             total_counts += best
+
 #         print("Final total button press counts:", total_counts)
             
 #     assert True
+
+def test_input_part_two():
+    with open(r"c:/Projects/playground/aoc2025/10/input.txt", encoding='utf-8') as f:
+        total_counts = 0
+        for line in f:
+            desired_state, button_sets = parse_line_to_machine_with_joltage(line.strip())
+            current_state = [False] * len(desired_state)
+
+            print("Processing line with desired state:", desired_state)
+
+            best_button_press_count, best_individual = hillclimber_joltage_button_press_count(button_sets, current_state, desired_state)
+
+            print("Best button press count found for line:", best_button_press_count)
+            total_counts += best_button_press_count
+            
+        print("Final total button press counts:", total_counts)
+            
+    assert True
