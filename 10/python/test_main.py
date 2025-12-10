@@ -138,10 +138,10 @@ def test_hillclimber_joltage_machine_one():
 
 def test_hillclimber_joltage_machine_two():
     button_sets = [
-        (0, 1, 2, 3, 4),
-        (0, 3, 4),
-        (0, 1, 2, 4, 5),
-        (1, 2),
+        [0, 1, 2, 3, 4],
+        [0, 3, 4],
+        [0, 1, 2, 4, 5],
+        [1, 2],
     ]
     current_state = [0, 0, 0, 0, 0, 0]
     desired_state = [10,11,11,5,10,5]
@@ -224,11 +224,11 @@ def hillclimber_button_press_count(button_sets, current_state, desired_state):
     return len(global_best_individual), global_best_individual
 
 def hillclimber_joltage_button_press_count(button_sets, current_state, desired_state):
-    
-    population_size = 5
+
+    population_size = 20
     stddev_size = 2
     population = create_population_joltage(button_sets, population_size, None, stddev_size)
-    generations_count = 2
+    generations_count = 3
     generation = 0
     retry_count = 0
 
@@ -252,6 +252,10 @@ def hillclimber_joltage_button_press_count(button_sets, current_state, desired_s
         best_individual = population[best_index]
         best_score = fitness_scores[best_index]
 
+        new_state = []
+        if global_best_individual is not None:
+            new_state = increase_joltage(global_best_individual, current_state)
+
         if best_score >= global_best_score:
             global_best_score = best_score
             global_best_individual = best_individual
@@ -259,12 +263,13 @@ def hillclimber_joltage_button_press_count(button_sets, current_state, desired_s
         if len(best_individual) < global_minimum_button_press_count:
             global_minimum_button_press_count = len(best_individual)
 
-        new_state = increase_joltage(global_best_individual, current_state)
-
         population = create_population_joltage(button_sets, population_size, global_best_individual, stddev_size)
 
+        # print("Generation:", generation, "Best score:", best_score, "Global best score:", global_best_score, "New state:", new_state, "Desired state:", desired_state, "Button presses:", len(best_individual))
+        # print("Global best individual:", global_best_individual)
+        # print_hillclimber_data(population, fitness_scores, desired_state)
+
         # if generation == generations_count - 1:
-        #     new_state = increase_joltage(global_best_individual, current_state)
         #     if new_state != desired_state:
         #         result_found = False
         #         generations_count += 10
@@ -275,6 +280,8 @@ def hillclimber_joltage_button_press_count(button_sets, current_state, desired_s
         #         result_found = True
 
         generation += 1
+
+    print("Final best state:", increase_joltage(global_best_individual, current_state), "Desired state:", desired_state)
 
     return len(global_best_individual), global_best_individual
 
@@ -343,7 +350,6 @@ def create_population(button_sets, population_size, best_individual, stddev_size
     return population
 
 def create_population_joltage(button_sets, population_size, best_individual, stddev_size=3):
-    # Generate button set counts up to len(button_sets) using normal distribution around best_individual
     button_set_count = np.random.randint(1, len(button_sets), size=population_size)
     if best_individual is not None:
         mean_size = len(best_individual)
@@ -352,12 +358,12 @@ def create_population_joltage(button_sets, population_size, best_individual, std
         
     population = []
     
-    # Generate individuals up to population_size using normal distribution around best_individual
     if best_individual is not None:
-        for _ in range(population_size):
+        population.append(best_individual)
+        for _ in range(population_size - 1):
             mean_size = len(best_individual)
             individual_size = int(np.random.normal(mean_size, stddev_size))
-            individual_size = max(1, min(individual_size, len(button_sets)))
+            individual_size = np.clip(individual_size, 1, mean_size + stddev_size)
 
             selected_button_set_indexes = np.random.randint(0, len(button_sets), size=individual_size)
             selected_button_sets = [button_sets[index] for index in selected_button_set_indexes]
@@ -412,6 +418,15 @@ def increase_joltage(button_sets, current_joltage):
         for button in button_set:
             new_state[button] += 1
     return new_state
+
+def print_hillclimber_data(population, fitness_scores, desired_state):
+    for i in range(len(population)):
+        individual = population[i]
+        score = fitness_scores[i]
+        print("Individual:", individual, "\nScore:", score)
+        current_state = increase_joltage(individual, [0]*len(desired_state))
+        print("Current state:", current_state, "\nDesired state:", desired_state)
+        print("-----")
 
 # def test_input_part_one():
 #     with open(r"c:/Projects/playground/aoc2025/10/input.txt", encoding='utf-8') as f:
