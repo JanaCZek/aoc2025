@@ -97,7 +97,17 @@
 - Github Copilot was again of great help - mainly with syntax, but for smaller function also with the entire logic. It helps to have a descriptive name for the function for one, your future self, and two, for context for Copilot
 
 ### Day 10
-- C#
+- Python
+
+**Practice** 
+- Genetic algorithms and local search
+
+**Lessons learned**
+- Initially set of in C#, but quickly switched to Python because I realized that I could use genetic algorithms to perform a heuristic search - worked for part one, not for part two
+
+### Day 11
+- Language TBD
+- Try finishing day 10 part two
 
 **Practice** 
 - Try implementing any of the previous tasks in SQL, for shits and giggles
