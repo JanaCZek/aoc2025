@@ -243,10 +243,10 @@ def hillclimber_button_press_count(button_sets, current_state, desired_state):
 
 def hillclimber_joltage_button_press_count(button_sets, current_state, desired_state):
 
-    population_size = 30
-    stddev_size = 2
+    population_size = 10
+    stddev_size = 3
     population = create_population_joltage(button_sets, population_size, None, stddev_size)
-    generations_count = 10
+    generations_count = 20
     generation = 0
     retry_count = 0
 
@@ -274,7 +274,7 @@ def hillclimber_joltage_button_press_count(button_sets, current_state, desired_s
         if global_best_individual is not None:
             new_state = increase_joltage(global_best_individual, current_state)
 
-        if best_score >= global_best_score:
+        if best_score > global_best_score:
             global_best_score = best_score
             global_best_individual = best_individual
 
@@ -287,15 +287,15 @@ def hillclimber_joltage_button_press_count(button_sets, current_state, desired_s
         # print("Global best individual:", global_best_individual)
         # print_hillclimber_data(population, fitness_scores, desired_state)
 
-        # if generation == generations_count - 1:
-        #     if new_state != desired_state:
-        #         result_found = False
-        #         generations_count += 10
-        #         if retry_count > 10:
-        #             population = create_population_joltage(button_sets, population_size, None, stddev_size)
-        #             retry_count = 0
-        #     else:
-        #         result_found = True
+        if generation == generations_count - 1:
+            if new_state != desired_state:
+                generations_count += 20
+
+                population = create_population_joltage(button_sets, population_size, None, stddev_size)
+
+                global_best_individual = None
+                global_best_score = -np.inf
+                global_minimum_button_press_count = np.inf
 
         generation += 1
 
@@ -318,7 +318,7 @@ def fitness_function(button_press_count, current_state, desired_state):
 
 def fitness_function_joltage(button_press_count, current_state, desired_state):
     button_state_match_score = 100
-    button_press_count_penalty_multiplier = 0.9
+    # button_press_count_penalty_multiplier = 0.9
     score = 0
 
     for i in range(len(current_state)):
@@ -328,7 +328,7 @@ def fitness_function_joltage(button_press_count, current_state, desired_state):
         else:
             score += button_state_match_score / diff
 
-    score -= button_press_count * button_press_count_penalty_multiplier
+    # score -= button_press_count * button_press_count_penalty_multiplier
 
     return score
 
@@ -368,44 +368,48 @@ def create_population(button_sets, population_size, best_individual, stddev_size
     return population
 
 def create_population_joltage(button_sets, population_size, best_individual, stddev_size=3):
-    button_set_count = np.random.randint(1, len(button_sets), size=population_size)
-    if best_individual is not None:
-        mean_size = len(best_individual)
-        button_set_count = np.random.normal(mean_size, stddev_size, size=population_size).astype(int)
-        np.clip(button_set_count, min=1, max=len(best_individual) + stddev_size)
-        
     population = []
-    
-    if best_individual is not None:
-        population.append(best_individual)
-        for _ in range(population_size - 1):
-            mean_size = len(best_individual)
-            individual_size = int(np.random.normal(mean_size, stddev_size))
-            individual_size = np.clip(individual_size, 1, mean_size + stddev_size)
 
-            selected_button_set_indexes = np.random.randint(0, len(button_sets), size=individual_size)
-            selected_button_sets = [button_sets[index] for index in selected_button_set_indexes]
-            population.append(selected_button_sets)
-    else:
+    if best_individual is None:
+        button_set_count = np.random.randint(1, len(button_sets), size=population_size)
+
         for i in range(population_size):
             selected_button_set_indexes = np.random.randint(0, len(button_sets), size=button_set_count[i])
             selected_button_sets = [button_sets[index] for index in selected_button_set_indexes]
             population.append(selected_button_sets)
+    else:
+        for _ in range(population_size):
+            new_individual = best_individual.copy()
+
+            remove_button_sets = np.random.choice([True, False], p=[0.1, 0.9])
+
+            if remove_button_sets and len(new_individual) > 1:
+                remove_count = np.random.randint(1, max(stddev_size, 2))
+                remove_count = min(remove_count, len(new_individual) - 1)
+                remove_indexes = np.random.choice(len(new_individual), size=remove_count, replace=False)
+                new_individual = [new_individual[i] for i in range(len(new_individual)) if i not in remove_indexes]
+
+            add_button_sets = np.random.choice([True, False], p=[0.1, 0.9])
+
+            if add_button_sets:
+                add_count = np.random.randint(1,  max(stddev_size, 2))
+                selected_button_set_indexes = np.random.randint(0, len(button_sets), size=add_count)
+                selected_button_sets = [button_sets[index] for index in selected_button_set_indexes]
+                new_individual.extend(selected_button_sets)
+
+            mutate_button_set = np.random.choice([True, False], p=[0.1, 0.9], size=len(new_individual))
+            for i in range(len(new_individual)):
+                if mutate_button_set[i]:
+                    new_button_set_index = np.random.randint(0, len(button_sets))
+                    new_button_set = button_sets[new_button_set_index]
+
+                    while new_button_set == new_individual[i]:
+                        new_button_set_index = np.random.randint(0, len(button_sets))
+                        new_button_set = button_sets[new_button_set_index]
+                        
+                    new_individual[i] = button_sets[new_button_set_index]
             
-    unique_population = []
-    for individual in population:
-        if individual not in unique_population:
-            unique_population.append(individual)
-    population = unique_population
-
-    mean_size = len(best_individual) if best_individual is not None else int(len(button_sets) / 2)
-    while len(population) < population_size:
-        individual_size = int(np.random.normal(mean_size, stddev_size))
-        individual_size = np.clip(individual_size, 1, mean_size + stddev_size)
-
-        selected_button_set_indexes = np.random.randint(0, len(button_sets), size=individual_size)
-        selected_button_sets = [button_sets[index] for index in selected_button_set_indexes]
-        population.append(selected_button_sets)
+            population.append(new_individual)
         
     return population
 
