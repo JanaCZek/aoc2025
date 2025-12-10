@@ -130,29 +130,14 @@ def test_hillclimber_joltage_machine_one():
     current_state = [0, 0, 0, 0]
     desired_state = [3,5,4,7]
 
-    best_button_press_count, _ = hillclimber_joltage_button_press_count(button_sets, current_state, desired_state)
+    best_button_press_count, best = hillclimber_joltage_button_press_count(button_sets, current_state, desired_state)
 
     print("ONE Best button press count found:", best_button_press_count)
+    print("Best individual:", best)
 
     assert best_button_press_count == 10
 
 def test_hillclimber_joltage_machine_two():
-    button_sets = [
-        [0, 1, 2, 3, 4],
-        [0, 3, 4],
-        [0, 1, 2, 4, 5],
-        [1, 2],
-    ]
-    current_state = [0, 0, 0, 0, 0, 0]
-    desired_state = [10,11,11,5,10,5]
-
-    best_button_press_count, _ = hillclimber_joltage_button_press_count(button_sets, current_state, desired_state)
-
-    print("THREE Best button press count found:", best_button_press_count)
-
-    assert best_button_press_count == 11
-
-def test_hillclimber_joltage_machine_three():
     button_sets = [
         [0, 2, 3, 4],
         [2, 3],
@@ -163,11 +148,29 @@ def test_hillclimber_joltage_machine_three():
     current_state = [0, 0, 0, 0, 0]
     desired_state = [7,5,12,7,2]
 
-    best_button_press_count, _ = hillclimber_joltage_button_press_count(button_sets, current_state, desired_state)
+    best_button_press_count, best = hillclimber_joltage_button_press_count(button_sets, current_state, desired_state)
 
     print("TWO Best button press count found:", best_button_press_count)
+    print("Best individual:", best)
 
     assert best_button_press_count == 12
+
+def test_hillclimber_joltage_machine_three():
+    button_sets = [
+        [0, 1, 2, 3, 4],
+        [0, 3, 4],
+        [0, 1, 2, 4, 5],
+        [1, 2],
+    ]
+    current_state = [0, 0, 0, 0, 0, 0]
+    desired_state = [10,11,11,5,10,5]
+
+    best_button_press_count, best = hillclimber_joltage_button_press_count(button_sets, current_state, desired_state)
+
+    print("THREE Best button press count found:", best_button_press_count)
+    print("Best individual:", best)
+
+    assert best_button_press_count == 11
 
 def hillclimber_button_press_count(button_sets, current_state, desired_state):
     # button_sets: [[0, 1, 2], [1, 3], ...]
@@ -225,10 +228,10 @@ def hillclimber_button_press_count(button_sets, current_state, desired_state):
 
 def hillclimber_joltage_button_press_count(button_sets, current_state, desired_state):
 
-    population_size = 20
-    stddev_size = 2
+    population_size = 600
+    stddev_size = 4
     population = create_population_joltage(button_sets, population_size, None, stddev_size)
-    generations_count = 3
+    generations_count = 500
     generation = 0
     retry_count = 0
 
