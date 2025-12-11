@@ -190,6 +190,23 @@ def test_does_not_update_paths_when_completed_path_contains_dac():
 
     assert updated_paths == expected_paths
 
+def test_updates_paths_to_skip_when_an_output_is_in_paths_to_skip():
+    current_identifier = 'hpc'
+    outputs = ['lgk', 'xyz']
+    paths_to_skip = ['lgk']
+
+    updated_paths = update_identifiers_to_skip(current_identifier, outputs, paths_to_skip)
+
+    expected_paths = ['hpc', 'lgk']
+
+    assert updated_paths == expected_paths
+
+    current_identifier = 'fft'
+
+    updated_paths = update_identifiers_to_skip(current_identifier, outputs, paths_to_skip)
+
+    assert updated_paths == expected_paths
+
 def find_input(input, identifier='you'):
     line_index = 0
     identifier_with_colon = identifier + ':'
@@ -241,6 +258,8 @@ def find_all_paths_to_out_fft_dac(input, input_identifier='you', end_identifier=
     stack = [(output, [output]) for output in outputs]
     paths_to_skip = []
 
+    print()
+
     while stack:
         current_identifier, path = stack.pop()
         if current_identifier == end_identifier:
@@ -250,6 +269,11 @@ def find_all_paths_to_out_fft_dac(input, input_identifier='you', end_identifier=
             continue
         current_outputs = get_outputs_from_line(input, current_line_index)
         
+        paths_to_skip = update_identifiers_to_skip(current_identifier, current_outputs, paths_to_skip)
+
+        if current_identifier in paths_to_skip:
+            continue
+
         # Comment to test out original logic
         current_outputs = [output for output in current_outputs if output not in paths_to_skip]
 
@@ -258,6 +282,7 @@ def find_all_paths_to_out_fft_dac(input, input_identifier='you', end_identifier=
                 if (len(nodes_of_interest) == 0) or all(node in path for node in nodes_of_interest):
                     path = path + [output]
                     paths_to_out.append(path)
+                    # Comment to test out original logic
                     paths_to_skip = update_paths_to_skip(path, paths_to_skip)
 
                     if stop_after_found_count is not None and len(paths_to_out) >= stop_after_found_count:
@@ -285,6 +310,15 @@ def update_paths_to_skip(completed_path, paths_to_skip):
 
     return paths_to_skip
 
+def update_identifiers_to_skip(current_identifier, outputs, paths_to_skip):
+    if current_identifier == 'fft' or current_identifier == 'dac':
+        return paths_to_skip
+    
+    if all(skip in outputs for skip in paths_to_skip):
+        paths_to_skip.insert(0, current_identifier)
+
+    return paths_to_skip
+
 # def test_input_part_one():
 #     with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
 #         lines = f.read()
@@ -292,45 +326,10 @@ def update_paths_to_skip(completed_path, paths_to_skip):
 #         print(f"Part One: {len(paths_to_out)}")
 #     assert True
 
-def test_input_part_two_small_one():
-    with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
-        lines = f.read()
-        start_identifier = 'svr'
-        end_identifier = 'out'
-        paths = find_all_paths_to_out_fft_dac(lines, start_identifier, end_identifier, [], 20)
-
-        print()
-        for path in paths:
-            print(path)
-
+# def test_input_part_two_small_one():
+#     with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
+#         lines = f.read()
 #         start_identifier = 'svr'
-#         end_identifier = 'dac'
-#         paths = find_all_paths_to_out_fft_dac(lines, start_identifier, end_identifier, [], 1)
-
-#         print()
-#         for path in paths:
-#             print(path)
-
-#         start_identifier = 'fft'
-#         end_identifier = 'dac'
-#         paths = find_all_paths_to_out_fft_dac(lines, start_identifier, end_identifier, [], 1)
-
-#         print(paths)
-
-#         start_identifier = 'dac'
 #         end_identifier = 'out'
-#         paths = find_all_paths_to_out_fft_dac(lines, start_identifier, end_identifier, [], 1)
 
-#         print()
-#         for path in paths:
-#             print(path)
-
-#         start_identifier = 'fft'
-#         end_identifier = 'out'
-#         paths = find_all_paths_to_out_fft_dac(lines, start_identifier, end_identifier, [], 10)
-
-#         print()
-#         for path in paths:
-#             print(path)
-
-    assert True
+#     assert True
