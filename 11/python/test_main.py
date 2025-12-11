@@ -73,9 +73,32 @@ ggg: out
 hhh: ccc fff iii
 iii: out
 """
-    paths_to_out = find_count_of_all_paths_to_out(input)
+    paths_to_out = find_all_paths_to_out(input)
 
-    assert paths_to_out == 5
+    assert len(paths_to_out) == 5
+
+def test_only_paths_over_dac_and_fft():
+    input = """svr: aaa bbb
+aaa: fft
+fft: ccc
+bbb: tty
+tty: ccc
+ccc: ddd eee
+ddd: hub
+hub: fff
+eee: dac
+dac: fff
+fff: ggg hhh
+ggg: out
+hhh: out
+"""
+    paths_to_out = find_all_paths_to_out(input, 'svr')
+    
+    expected_path_count = 2
+
+    filtered_paths = [path for path in paths_to_out if 'dac' in path and 'fft' in path]
+
+    assert len(filtered_paths) == expected_path_count
 
 def find_input(input, identifier='you'):
     line_index = 0
@@ -98,9 +121,9 @@ def get_outputs_from_line(input, line_index):
 
     return outputs
 
-def find_count_of_all_paths_to_out(input):
+def find_all_paths_to_out(input, input_identifier='you'):
     end_identifier = 'out'
-    line_index = find_input(input)
+    line_index = find_input(input, identifier=input_identifier)
     outputs = get_outputs_from_line(input, line_index)
 
     paths_to_out = []
@@ -115,11 +138,21 @@ def find_count_of_all_paths_to_out(input):
                 paths_to_out.append(path + [output])
             else:
                 stack.append((output, path + [output]))
-    return len(paths_to_out)
+
+    return paths_to_out
 
 def test_input_part_one():
     with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
         lines = f.read()
-        paths_to_out = find_count_of_all_paths_to_out(lines)
-        print(f"Part One: {paths_to_out}")
+        paths_to_out = find_all_paths_to_out(lines)
+        print(f"Part One: {len(paths_to_out)}")
     assert True
+
+# def test_input_part_two():
+#     with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
+#         lines = f.read()
+#         paths_to_out = find_all_paths_to_out(lines , 'svr')
+#         filtered_paths = [path for path in paths_to_out if 'dac' in path and 'fft' in path]
+
+#         print(f"Part One: {len(filtered_paths)}")
+#     assert True
