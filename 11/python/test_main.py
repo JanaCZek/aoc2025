@@ -77,7 +77,7 @@ iii: out
 
     assert len(paths_to_out) == 5
 
-def test_only_paths_over_dac_and_fft():
+def test_filter_only_paths_with_fft_and_dac():
     input = """svr: aaa bbb
 aaa: fft
 fft: ccc
@@ -92,13 +92,103 @@ fff: ggg hhh
 ggg: out
 hhh: out
 """
-    paths_to_out = find_all_paths_to_out(input, 'svr')
-    
+
+    paths_to_out_with_fft_and_dac = find_all_paths_to_out_fft_dac(input, 'svr', 'out', ['fft', 'dac'])
+
     expected_path_count = 2
 
-    filtered_paths = [path for path in paths_to_out if 'dac' in path and 'fft' in path]
+    assert len(paths_to_out_with_fft_and_dac) == expected_path_count
 
-    assert len(filtered_paths) == expected_path_count
+def test_filter_paths_real_input_small():
+    input = """svr: pxq fmq ggx ora
+pxq: vay ftt nzt lkf fnt xtu sju zpf ydd qsi dxm gnw rxt dzu pci lml rfx swg fkw gpo
+ftt: cys mro
+mro: xjj fkd eej
+ora: krs fkw qsi lkf sju lml rfx gnw rxt pci
+"""
+
+    start_identifier = 'svr'
+    end_identifier = 'mro'
+
+    paths = find_all_paths_to_out_fft_dac(input, start_identifier, end_identifier, ['ftt'])
+
+    expected_path_count = 1
+
+    assert len(paths) == expected_path_count
+
+def test_insert_last_identifier_if_paths_are_empty():
+    completed_path = ['hpc', 'lgk', 'out']
+    paths_to_skip = []
+
+    updated_paths = update_paths_to_skip(completed_path, paths_to_skip)
+
+    expected_paths = ['lgk']
+
+    assert updated_paths == expected_paths
+
+def test_prepends_previous_identifier_if_last_exists_in_paths():
+    completed_path = ['hpc', 'lgk', 'out']
+    paths_to_skip = ['lgk']
+
+    updated_paths = update_paths_to_skip(completed_path, paths_to_skip)
+
+    expected_paths = ['hpc', 'lgk']
+
+    assert updated_paths == expected_paths
+
+    completed_path = ['abc', 'hpc', 'lgk', 'out']
+    paths_to_skip = ['hpc', 'lgk']
+
+    updated_paths = update_paths_to_skip(completed_path, paths_to_skip)
+
+    expected_paths = ['abc', 'hpc', 'lgk']
+
+    assert updated_paths == expected_paths
+
+    completed_path = ['xyz', 'abc', 'hpc', 'lgk', 'out']
+    paths_to_skip = ['abc', 'hpc', 'lgk']
+
+    updated_paths = update_paths_to_skip(completed_path, paths_to_skip)
+
+    expected_paths = ['xyz','abc', 'hpc', 'lgk']
+
+    assert updated_paths == expected_paths
+    
+def test_does_not_update_paths_when_completed_path_contains_fft():
+    completed_path = ['fft', 'lgk', 'out']
+    paths_to_skip = []
+
+    updated_paths = update_paths_to_skip(completed_path, paths_to_skip)
+
+    expected_paths = []
+
+    assert updated_paths == expected_paths
+
+    paths_to_skip = ['abc']
+
+    updated_paths = update_paths_to_skip(completed_path, paths_to_skip)
+
+    expected_paths = ['abc']
+
+    assert updated_paths == expected_paths
+
+def test_does_not_update_paths_when_completed_path_contains_dac():
+    completed_path = ['dac', 'lgk', 'out']
+    paths_to_skip = []
+
+    updated_paths = update_paths_to_skip(completed_path, paths_to_skip)
+
+    expected_paths = []
+
+    assert updated_paths == expected_paths
+
+    paths_to_skip = ['abc']
+
+    updated_paths = update_paths_to_skip(completed_path, paths_to_skip)
+
+    expected_paths = ['abc']
+
+    assert updated_paths == expected_paths
 
 def find_input(input, identifier='you'):
     line_index = 0
@@ -109,7 +199,7 @@ def find_input(input, identifier='you'):
             return line_index
         line_index += 1
 
-    return 0
+    return None
 
 def get_outputs_from_line(input, line_index):
     lines = input.splitlines()
@@ -141,18 +231,106 @@ def find_all_paths_to_out(input, input_identifier='you'):
 
     return paths_to_out
 
-def test_input_part_one():
-    with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
-        lines = f.read()
-        paths_to_out = find_all_paths_to_out(lines)
-        print(f"Part One: {len(paths_to_out)}")
-    assert True
+def find_all_paths_to_out_fft_dac(input, input_identifier='you', end_identifier='out', nodes_of_interest=[], stop_after_found_count=None):
+    line_index = find_input(input, identifier=input_identifier)
+    if line_index is None:
+        return []
+    outputs = get_outputs_from_line(input, line_index)
 
-# def test_input_part_two():
+    paths_to_out = []
+    stack = [(output, [output]) for output in outputs]
+    paths_to_skip = []
+
+    while stack:
+        current_identifier, path = stack.pop()
+        if current_identifier == end_identifier:
+            continue
+        current_line_index = find_input(input, identifier=current_identifier)
+        if current_line_index is None:
+            continue
+        current_outputs = get_outputs_from_line(input, current_line_index)
+        
+        # Comment to test out original logic
+        current_outputs = [output for output in current_outputs if output not in paths_to_skip]
+
+        for output in current_outputs:
+            if output == end_identifier:
+                if (len(nodes_of_interest) == 0) or all(node in path for node in nodes_of_interest):
+                    path = path + [output]
+                    paths_to_out.append(path)
+                    paths_to_skip = update_paths_to_skip(path, paths_to_skip)
+
+                    if stop_after_found_count is not None and len(paths_to_out) >= stop_after_found_count:
+                        return paths_to_out
+            elif output not in path:
+                stack.append((output, path + [output]))
+
+    return paths_to_out
+
+def update_paths_to_skip(completed_path, paths_to_skip):
+    if 'fft' in completed_path or 'dac' in completed_path:
+        return paths_to_skip
+
+    if not paths_to_skip:
+        last_before_out = completed_path[-2]
+        paths_to_skip.append(last_before_out)
+    else:
+        index = -2
+        while completed_path[index] in paths_to_skip:
+            index -= 1
+            if abs(index) > len(completed_path):
+                break
+        previous_identifier = completed_path[index]
+        paths_to_skip.insert(0, previous_identifier)
+
+    return paths_to_skip
+
+# def test_input_part_one():
 #     with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
 #         lines = f.read()
-#         paths_to_out = find_all_paths_to_out(lines , 'svr')
-#         filtered_paths = [path for path in paths_to_out if 'dac' in path and 'fft' in path]
-
-#         print(f"Part One: {len(filtered_paths)}")
+#         paths_to_out = find_all_paths_to_out(lines)
+#         print(f"Part One: {len(paths_to_out)}")
 #     assert True
+
+def test_input_part_two_small_one():
+    with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
+        lines = f.read()
+        start_identifier = 'svr'
+        end_identifier = 'out'
+        paths = find_all_paths_to_out_fft_dac(lines, start_identifier, end_identifier, [], 20)
+
+        print()
+        for path in paths:
+            print(path)
+
+#         start_identifier = 'svr'
+#         end_identifier = 'dac'
+#         paths = find_all_paths_to_out_fft_dac(lines, start_identifier, end_identifier, [], 1)
+
+#         print()
+#         for path in paths:
+#             print(path)
+
+#         start_identifier = 'fft'
+#         end_identifier = 'dac'
+#         paths = find_all_paths_to_out_fft_dac(lines, start_identifier, end_identifier, [], 1)
+
+#         print(paths)
+
+#         start_identifier = 'dac'
+#         end_identifier = 'out'
+#         paths = find_all_paths_to_out_fft_dac(lines, start_identifier, end_identifier, [], 1)
+
+#         print()
+#         for path in paths:
+#             print(path)
+
+#         start_identifier = 'fft'
+#         end_identifier = 'out'
+#         paths = find_all_paths_to_out_fft_dac(lines, start_identifier, end_identifier, [], 10)
+
+#         print()
+#         for path in paths:
+#             print(path)
+
+    assert True
