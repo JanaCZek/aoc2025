@@ -86,6 +86,16 @@ abc: out
 
     assert len(paths) == expected_path_count
 
+
+def test_input_part_two_small_one():
+    with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
+        lines = f.read()
+        paths = find_all_paths_from_svr_to_out_over_fft_dac_with_skipping(lines)
+
+        print(f"Part Two Small One: {len(paths)}")
+
+    assert True
+
 input_identifier='svr'
 end_identifier='out'
 identifiers_of_interest = ['fft', 'dac'] 
@@ -113,13 +123,19 @@ def find_all_paths_from_svr_to_out_over_fft_dac_with_skipping(input):
 
         if is_identifier_of_interest_in_path(path) == False and all(output in identifiers_to_check for output in current_outputs):
             identifiers_to_skip.insert(0, current_identifier)
+            print("Skipping on path:", path)
+            print("Identifiers to skip:", len(identifiers_to_skip))
             continue
 
         for output in current_outputs:
             possible_path = path + [output]
 
+            if possible_path[-1] == end_identifier:
+                print(f"Reached out without fft/dac: {possible_path}")
+
             if possible_path[-1] == end_identifier and all(identifier in possible_path for identifier in identifiers_of_interest):
                 paths_to_out.append(possible_path)
+                print(f"Found path to out: {possible_path}")
                 continue
 
             if continue_on_path(possible_path, identifiers_to_skip):
@@ -174,3 +190,7 @@ def continue_on_path(path, identifiers_to_skip):
 
 def is_identifier_of_interest_in_path(path):
     return any(identifier in path for identifier in identifiers_of_interest)
+
+# TODO:
+# - Cycle detection
+# - Be more strict with checking already traversed subgraphs
