@@ -258,8 +258,6 @@ def find_all_paths_to_out_fft_dac(input, input_identifier='you', end_identifier=
     stack = [(output, [output]) for output in outputs]
     paths_to_skip = []
 
-    print()
-
     while stack:
         current_identifier, path = stack.pop()
         if current_identifier == end_identifier:
@@ -310,14 +308,29 @@ def update_paths_to_skip(completed_path, paths_to_skip):
 
     return paths_to_skip
 
-def update_identifiers_to_skip(current_identifier, outputs, paths_to_skip):
+def update_identifiers_to_skip(current_identifier, outputs, identifiers_to_skip):
     if current_identifier == 'fft' or current_identifier == 'dac':
-        return paths_to_skip
+        return identifiers_to_skip
     
-    if all(skip in outputs for skip in paths_to_skip):
-        paths_to_skip.insert(0, current_identifier)
+    if all(skip in outputs for skip in identifiers_to_skip):
+        identifiers_to_skip.insert(0, current_identifier)
 
-    return paths_to_skip
+    return identifiers_to_skip
+
+def prefill_output_identifiers_to_skip(input):
+    identifiers_to_skip = []
+    lines = input.splitlines()
+
+    for line in lines:
+        parts = line.split(':')
+        
+        outputs_part = parts[1].strip()
+        outputs = outputs_part.split(' ')
+
+        if len(outputs) == 1 and outputs[0] == 'out':
+            identifiers_to_skip.append(parts[0].strip())
+
+    return identifiers_to_skip
 
 # def test_input_part_one():
 #     with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
