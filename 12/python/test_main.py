@@ -441,10 +441,10 @@ def test_input_part_one():
 
         shapes = parse_shapes(shape_line)
 
-        # for requirement_line in requirement_lines:
-        #     expected_size, expected_counts = parse_line_to_requirements(requirement_line)
+        for requirement_line in requirement_lines:
+            expected_size, expected_counts = parse_line_to_requirements(requirement_line)
 
-        #     _ = ga_for_placement_in_grid(shapes, expected_size, expected_counts)
+            _ = ga_for_placement_in_grid(shapes, expected_size, expected_counts)
 
     assert True
 
@@ -593,6 +593,7 @@ def create_population(population_size, required_shapes, max_x, max_y, best_indiv
 
     population = []
     flip_probability = 0.1
+    rotation_probabilities = [0.01, 0.98, 0.01]
     max_rotations = 4
 
     if best_individual is None:
@@ -615,7 +616,7 @@ def create_population(population_size, required_shapes, max_x, max_y, best_indiv
             while duplicate:
                 for shape_index, _ in enumerate(required_shapes):
                     best_item = best_individual[shape_index]
-                    individual.append(create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability))
+                    individual.append(create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability, rotation_probabilities))
 
                 if individual not in population:
                     duplicate = False
@@ -636,15 +637,15 @@ def create_random_individual(max_rotations, max_x, max_y):
 
     return (num_rotations, flipped_horizontally, flipped_vertically, x, y)
 
-def create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability):
+def create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability, rotation_probabilities):
     max_spread = 1
     min_spread = -1 * max_spread
 
-    num_rotations = (best_item[0] + np.random.choice([min_spread, 0, max_spread])) % max_rotations
+    num_rotations = (best_item[0] + np.random.choice([min_spread, 0, max_spread], p=rotation_probabilities)) % max_rotations
     flipped_horizontally = best_item[1] if np.random.rand() > flip_probability else not best_item[1]
     flipped_vertically = best_item[2] if np.random.rand() > flip_probability else not best_item[2]
-    x = min(max(best_item[3] + np.random.choice([min_spread, 0, max_spread]), 0), max_x)
-    y = min(max(best_item[4] + np.random.choice([min_spread, 0, max_spread]), 0), max_y)
+    x = min(max(best_item[3] + np.random.choice([min_spread, 0, max_spread], p=rotation_probabilities), 0), max_x)
+    y = min(max(best_item[4] + np.random.choice([min_spread, 0, max_spread], p=rotation_probabilities), 0), max_y)
 
     return (num_rotations, flipped_horizontally, flipped_vertically, x, y)
 
@@ -653,8 +654,8 @@ def ga_for_placement_in_grid(shapes, expected_size, expected_counts):
     grid_width, grid_height = expected_size
     max_x, max_y = get_max_x_and_y(grid_width, grid_height)
 
-    population_size = 150
-    max_generation_count = 50
+    population_size = 50
+    max_generation_count = 10
 
     generation = 0
     best_individual = None
