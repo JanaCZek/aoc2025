@@ -283,8 +283,7 @@ def test_get_required_shapes():
 
     assert result == expected
 
-def test_parses_shapes():
-    input = """0:
+sample_input = """0:
 ###
 ##.
 ##.
@@ -314,6 +313,8 @@ def test_parses_shapes():
 .#.
 ###
 """
+
+def test_parses_shapes():
     expected_shapes = [
         [['#', '#', '#'], 
          ['#', '#', '.'], 
@@ -335,7 +336,7 @@ def test_parses_shapes():
          ['#', '#', '#']],
     ]
 
-    result_shapes = parse_shapes(input)
+    result_shapes = parse_shapes(sample_input)
 
     assert result_shapes == expected_shapes
 
@@ -518,7 +519,16 @@ def test_ga_debug():
 
     best_individual = ga_for_placement_in_grid(shapes, size, counts)
 
-    print("Best Individual:", best_individual)
+    visualize_individual(best_individual, shapes, size, counts)
+
+    assert True
+
+def test_ga_with_bigger_sample():
+    shapes = parse_shapes(sample_input)
+    size = [12, 5]
+    counts = [1, 0, 1, 0, 2, 2]
+
+    best_individual = ga_for_placement_in_grid(shapes, size, counts)
 
     visualize_individual(best_individual, shapes, size, counts)
 
@@ -602,8 +612,8 @@ def ga_for_placement_in_grid(shapes, expected_size, expected_counts):
     grid_width, grid_height = expected_size
     max_x, max_y = get_max_x_and_y(grid_width, grid_height)
 
-    population_size = 1
-    generations = 1
+    population_size = 400
+    generations = 50
     best_individual = None
     best_fitness = np.inf
 
@@ -629,12 +639,11 @@ def ga_for_placement_in_grid(shapes, expected_size, expected_counts):
                 best_fitness = fitness
                 best_individual = individual
 
-        if best_fitness == len(required_shapes):
-            break
-
     return best_individual
 
 def visualize_individual(individual, shapes, expected_size, expected_counts):
+    print()
+    
     required_shapes = get_required_shapes(shapes, expected_counts)
     grid_width, grid_height = expected_size
     placement_data = []
@@ -657,3 +666,7 @@ def visualize_individual(individual, shapes, expected_size, expected_counts):
     print("\nOccupancy Grid:")
     for row in occupancy_grid:
         print(' '.join(str(cell) for cell in row))
+
+    # Total number of cells in occupancy grid that have occupancy greater than 1
+    overlap_occupied_cells = sum(1 for row in occupancy_grid for cell in row if cell > 1)
+    print(f"\nTotal overlapping occupied cells: {overlap_occupied_cells}")
