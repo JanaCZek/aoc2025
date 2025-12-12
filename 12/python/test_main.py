@@ -423,31 +423,6 @@ def parse_shapes(input):
 
     return shapes
 
-def test_input_part_one():
-    with open(r"c:/Projects/playground/aoc2025/12/input.txt", encoding='utf-8') as f:
-        lines = f.read()
-
-        requirement_index = 1
-        for line in lines.splitlines():
-            if 'x' in line:
-                break
-            requirement_index += 1
-
-        split_lines = lines.splitlines()
-        shape_lines = split_lines[0:requirement_index - 1]
-        requirement_lines = split_lines[requirement_index - 1:]
-
-        shape_line = '\n'.join(shape_lines)
-
-        shapes = parse_shapes(shape_line)
-
-        for requirement_line in requirement_lines:
-            expected_size, expected_counts = parse_line_to_requirements(requirement_line)
-
-            _ = ga_for_placement_in_grid(shapes, expected_size, expected_counts)
-
-    assert True
-
 def test_fitness_function():
     good_occupancy_grid = [
         [0, 1, 0],
@@ -555,6 +530,31 @@ def test_ga_debug():
 
 #     assert True
 
+def test_input_part_one():
+    with open(r"c:/Projects/playground/aoc2025/12/input.txt", encoding='utf-8') as f:
+        lines = f.read()
+
+        requirement_index = 1
+        for line in lines.splitlines():
+            if 'x' in line:
+                break
+            requirement_index += 1
+
+        split_lines = lines.splitlines()
+        shape_lines = split_lines[0:requirement_index - 1]
+        requirement_lines = split_lines[requirement_index - 1:]
+
+        shape_line = '\n'.join(shape_lines)
+
+        shapes = parse_shapes(shape_line)
+
+        for requirement_line in requirement_lines:
+            expected_size, expected_counts = parse_line_to_requirements(requirement_line)
+
+            _ = ga_for_placement_in_grid(shapes, expected_size, expected_counts)
+
+    assert True
+
 def get_required_shapes(shapes, required_counts):
     required_shapes = []
     for shape, count in zip(shapes, required_counts):
@@ -614,9 +614,13 @@ def create_population(population_size, required_shapes, max_x, max_y, best_indiv
             individual = []
             duplicate = True
             while duplicate:
+                occupied_spots = set()
                 for shape_index, _ in enumerate(required_shapes):
                     best_item = best_individual[shape_index]
-                    individual.append(create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability, rotation_probabilities))
+                    created = create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability, rotation_probabilities, occupied_spots)
+
+                    occupied_spots.add((created[3], created[4]))
+                    individual.append(created)
 
                 if individual not in population:
                     duplicate = False
@@ -637,7 +641,7 @@ def create_random_individual(max_rotations, max_x, max_y):
 
     return (num_rotations, flipped_horizontally, flipped_vertically, x, y)
 
-def create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability, rotation_probabilities):
+def create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability, rotation_probabilities, occupied_spots):
     max_spread = 1
     min_spread = -1 * max_spread
 
@@ -647,6 +651,18 @@ def create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_proba
     x = min(max(best_item[3] + np.random.choice([min_spread, 0, max_spread], p=rotation_probabilities), 0), max_x)
     y = min(max(best_item[4] + np.random.choice([min_spread, 0, max_spread], p=rotation_probabilities), 0), max_y)
 
+    move_probablility = 0.01
+    stay_probability = 1.00 - (move_probablility * 2)
+    move_probablilities = [move_probablility, stay_probability, move_probablility]
+
+    while (x, y) in occupied_spots:
+        x = min(max(best_item[3] + np.random.choice([min_spread, 0, max_spread], p=move_probablilities), 0), max_x)
+        y = min(max(best_item[4] + np.random.choice([min_spread, 0, max_spread], p=move_probablilities), 0), max_y)
+
+        move_probablility += 0.01
+        stay_probability = 1.00 - (move_probablility * 2)
+        move_probablilities = [move_probablility, stay_probability, move_probablility]
+
     return (num_rotations, flipped_horizontally, flipped_vertically, x, y)
 
 def ga_for_placement_in_grid(shapes, expected_size, expected_counts):
@@ -654,7 +670,7 @@ def ga_for_placement_in_grid(shapes, expected_size, expected_counts):
     grid_width, grid_height = expected_size
     max_x, max_y = get_max_x_and_y(grid_width, grid_height)
 
-    population_size = 50
+    population_size = 5
     max_generation_count = 10
 
     generation = 0
