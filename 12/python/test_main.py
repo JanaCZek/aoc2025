@@ -534,6 +534,14 @@ def test_ga_with_bigger_sample():
 
     assert True
 
+def get_required_shapes(shapes, required_counts):
+    required_shapes = []
+    for shape, count in zip(shapes, required_counts):
+        for _ in range(count):
+            required_shapes.append(shape)
+
+    return required_shapes
+
 def fitness_function(occupancy_grid):
     single_occupancy_count = 0
     overlaps = []
@@ -546,14 +554,6 @@ def fitness_function(occupancy_grid):
                 overlaps.append(cell + cell)
 
     return single_occupancy_count + sum(overlaps)
-
-def get_required_shapes(shapes, required_counts):
-    required_shapes = []
-    for shape, count in zip(shapes, required_counts):
-        for _ in range(count):
-            required_shapes.append(shape)
-
-    return required_shapes
 
 def create_population(population_size, required_shapes, max_x, max_y, best_individual):
     # individual: [
@@ -571,53 +571,62 @@ def create_population(population_size, required_shapes, max_x, max_y, best_indiv
     # When best_individual is provided, create a new individual by slightly mutating the best_individual
 
     population = []
-    flip_probability = 0.1
-    max_rotattions = 4
+    flip_probability = 0.05
+    max_rotations = 4
 
-    for _ in range(population_size):
-        individual = []
-        for _ in required_shapes:
-            if best_individual is None:
-                num_rotations = np.random.randint(0, max_rotattions)
-                flipped_horizontally = np.random.choice([True, False])
-                flipped_vertically = np.random.choice([True, False])
-                x = np.random.randint(0, max_x + 1)
-                y = np.random.randint(0, max_y + 1)
-            else:
-                best_item = best_individual[len(individual)]
-                num_rotations = (best_item[0] + np.random.choice([-1, 0, 1])) % max_rotattions
-                flipped_horizontally = best_item[1] if np.random.rand() > flip_probability else not best_item[1]
-                flipped_vertically = best_item[2] if np.random.rand() > flip_probability else not best_item[2]
-                x = min(max(best_item[3] + np.random.choice([-1, 0, 1]), 0), max_x)
-                y = min(max(best_item[4] + np.random.choice([-1, 0, 1]), 0), max_y)
+    if best_individual is None:
+        for _ in range(population_size):
+            individual = []
+            for shape_index, _ in enumerate(required_shapes):
+                individual.append(create_random_individual(max_rotations, max_x, max_y))
+            population.append(individual)
+        return population
+    else:
+        for _ in range(population_size):
+            individual = []
+            for shape_index, _ in enumerate(required_shapes):
+                best_item = best_individual[shape_index]
+                individual.append(create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability))
 
-            individual.append((num_rotations, flipped_horizontally, flipped_vertically, x, y))
-        population.append(individual)
+            population.append(individual)
+
+        # Ensure best individual is retained
+        population[0] = best_individual
 
     return population
 
-def apply_transformations(shape, num_rotations, flipped_horizontally, flipped_vertically):
-    transformed_shape = shape
-    for _ in range(num_rotations):
-        transformed_shape = rotate_right(transformed_shape)
-    if flipped_horizontally:
-        transformed_shape = flip_horizontally(transformed_shape)
-    if flipped_vertically:
-        transformed_shape = flip_vertically(transformed_shape)
+def create_random_individual(max_rotations, max_x, max_y):
+    num_rotations = np.random.randint(0, max_rotations)
+    flipped_horizontally = np.random.choice([True, False])
+    flipped_vertically = np.random.choice([True, False])
+    x = np.random.randint(0, max_x + 1)
+    y = np.random.randint(0, max_y + 1)
 
-    return transformed_shape
+    return (num_rotations, flipped_horizontally, flipped_vertically, x, y)
+
+def create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability):
+    num_rotations = (best_item[0] + np.random.choice([-1, 0, 1])) % max_rotations
+    flipped_horizontally = best_item[1] if np.random.rand() > flip_probability else not best_item[1]
+    flipped_vertically = best_item[2] if np.random.rand() > flip_probability else not best_item[2]
+    x = min(max(best_item[3] + np.random.choice([-1, 0, 1]), 0), max_x)
+    y = min(max(best_item[4] + np.random.choice([-1, 0, 1]), 0), max_y)
+
+    return (num_rotations, flipped_horizontally, flipped_vertically, x, y)
 
 def ga_for_placement_in_grid(shapes, expected_size, expected_counts):
     required_shapes = get_required_shapes(shapes, expected_counts)
     grid_width, grid_height = expected_size
     max_x, max_y = get_max_x_and_y(grid_width, grid_height)
 
-    population_size = 400
-    generations = 50
+    population_size = 150
+    max_generation_count = 50
+
+    generation = 0
     best_individual = None
     best_fitness = np.inf
+    best_occupancy_grid = None
 
-    for generation in range(generations):
+    while generation < max_generation_count:
         population = create_population(population_size, required_shapes, max_x, max_y, best_individual)
 
         for individual in population:
@@ -638,12 +647,24 @@ def ga_for_placement_in_grid(shapes, expected_size, expected_counts):
             if fitness < best_fitness:
                 best_fitness = fitness
                 best_individual = individual
+                best_occupancy_grid = occupancy_grid
+
+        if generation == max_generation_count - 1 and has_any_overlap(best_occupancy_grid):
+            generation = 0
+            print("Resetting")
+            visualize_individual(best_individual, shapes, expected_size, expected_counts)
+
+            best_individual = None
+            best_fitness = np.inf
+            best_occupancy_grid = None
+
+        generation += 1
 
     return best_individual
 
 def visualize_individual(individual, shapes, expected_size, expected_counts):
     print()
-    
+
     required_shapes = get_required_shapes(shapes, expected_counts)
     grid_width, grid_height = expected_size
     placement_data = []
@@ -670,3 +691,17 @@ def visualize_individual(individual, shapes, expected_size, expected_counts):
     # Total number of cells in occupancy grid that have occupancy greater than 1
     overlap_occupied_cells = sum(1 for row in occupancy_grid for cell in row if cell > 1)
     print(f"\nTotal overlapping occupied cells: {overlap_occupied_cells}")
+
+def has_any_overlap(occupancy_grid):
+    return sum(1 for row in occupancy_grid for cell in row if cell > 1) > 0
+
+def apply_transformations(shape, num_rotations, flipped_horizontally, flipped_vertically):
+    transformed_shape = shape
+    for _ in range(num_rotations):
+        transformed_shape = rotate_right(transformed_shape)
+    if flipped_horizontally:
+        transformed_shape = flip_horizontally(transformed_shape)
+    if flipped_vertically:
+        transformed_shape = flip_vertically(transformed_shape)
+
+    return transformed_shape
