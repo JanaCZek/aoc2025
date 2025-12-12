@@ -194,3 +194,4 @@ def is_identifier_of_interest_in_path(path):
 # TODO:
 # - Cycle detection
 # - Be more strict with checking already traversed subgraphs
+# - Bottom up approach
