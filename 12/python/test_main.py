@@ -423,15 +423,30 @@ def parse_shapes(input):
 
     return shapes
 
-# def test_input_part_one():
-#     with open(r"c:/Projects/playground/aoc2025/12/input.txt", encoding='utf-8') as f:
-#         total_counts = 0
-#         lines = f.read()
+def test_input_part_one():
+    with open(r"c:/Projects/playground/aoc2025/12/input.txt", encoding='utf-8') as f:
+        lines = f.read()
 
-#         for line in f:
-#             print()
+        requirement_index = 1
+        for line in lines.splitlines():
+            if 'x' in line:
+                break
+            requirement_index += 1
 
-#     assert True
+        split_lines = lines.splitlines()
+        shape_lines = split_lines[0:requirement_index - 1]
+        requirement_lines = split_lines[requirement_index - 1:]
+
+        shape_line = '\n'.join(shape_lines)
+
+        shapes = parse_shapes(shape_line)
+
+        # for requirement_line in requirement_lines:
+        #     expected_size, expected_counts = parse_line_to_requirements(requirement_line)
+
+        #     _ = ga_for_placement_in_grid(shapes, expected_size, expected_counts)
+
+    assert True
 
 def test_fitness_function():
     good_occupancy_grid = [
@@ -444,11 +459,17 @@ def test_fitness_function():
         [2, 2, 1],
         [0, 1, 0],
     ]
-
+    even_worse_occupancy_grid = [
+        [0, 2, 0],
+        [3, 2, 1],
+        [0, 1, 0],
+    ]
     good_fitness = fitness_function(good_occupancy_grid)
     worse_fitness = fitness_function(worse_occupancy_grid)
+    even_worse_fitness = fitness_function(even_worse_occupancy_grid)
 
     assert good_fitness < worse_fitness
+    assert worse_fitness < even_worse_fitness
 
 def test_create_population_with_no_best_individual():
     required_shapes = [
@@ -519,20 +540,20 @@ def test_ga_debug():
 
     best_individual = ga_for_placement_in_grid(shapes, size, counts)
 
-    visualize_individual(best_individual, shapes, size, counts)
+    visualize_individual(best_individual, shapes, size, counts, False)
 
     assert True
 
-def test_ga_with_bigger_sample():
-    shapes = parse_shapes(sample_input)
-    size = [12, 5]
-    counts = [1, 0, 1, 0, 2, 2]
+# def test_ga_with_bigger_sample():
+#     shapes = parse_shapes(sample_input)
+#     size = [12, 5]
+#     counts = [1, 0, 1, 0, 2, 2]
 
-    best_individual = ga_for_placement_in_grid(shapes, size, counts)
+#     best_individual = ga_for_placement_in_grid(shapes, size, counts)
 
-    visualize_individual(best_individual, shapes, size, counts)
+#     visualize_individual(best_individual, shapes, size, counts, False)
 
-    assert True
+#     assert True
 
 def get_required_shapes(shapes, required_counts):
     required_shapes = []
@@ -571,22 +592,33 @@ def create_population(population_size, required_shapes, max_x, max_y, best_indiv
     # When best_individual is provided, create a new individual by slightly mutating the best_individual
 
     population = []
-    flip_probability = 0.05
+    flip_probability = 0.1
     max_rotations = 4
 
     if best_individual is None:
         for _ in range(population_size):
             individual = []
-            for shape_index, _ in enumerate(required_shapes):
-                individual.append(create_random_individual(max_rotations, max_x, max_y))
+            duplicate = True
+            while duplicate:
+                for shape_index, _ in enumerate(required_shapes):
+                    individual.append(create_random_individual(max_rotations, max_x, max_y))
+
+                if individual not in population:
+                    duplicate = False
+
             population.append(individual)
         return population
     else:
         for _ in range(population_size):
             individual = []
-            for shape_index, _ in enumerate(required_shapes):
-                best_item = best_individual[shape_index]
-                individual.append(create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability))
+            duplicate = True
+            while duplicate:
+                for shape_index, _ in enumerate(required_shapes):
+                    best_item = best_individual[shape_index]
+                    individual.append(create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability))
+
+                if individual not in population:
+                    duplicate = False
 
             population.append(individual)
 
@@ -605,11 +637,14 @@ def create_random_individual(max_rotations, max_x, max_y):
     return (num_rotations, flipped_horizontally, flipped_vertically, x, y)
 
 def create_mutated_individual(best_item, max_rotations, max_x, max_y, flip_probability):
-    num_rotations = (best_item[0] + np.random.choice([-1, 0, 1])) % max_rotations
+    max_spread = 1
+    min_spread = -1 * max_spread
+
+    num_rotations = (best_item[0] + np.random.choice([min_spread, 0, max_spread])) % max_rotations
     flipped_horizontally = best_item[1] if np.random.rand() > flip_probability else not best_item[1]
     flipped_vertically = best_item[2] if np.random.rand() > flip_probability else not best_item[2]
-    x = min(max(best_item[3] + np.random.choice([-1, 0, 1]), 0), max_x)
-    y = min(max(best_item[4] + np.random.choice([-1, 0, 1]), 0), max_y)
+    x = min(max(best_item[3] + np.random.choice([min_spread, 0, max_spread]), 0), max_x)
+    y = min(max(best_item[4] + np.random.choice([min_spread, 0, max_spread]), 0), max_y)
 
     return (num_rotations, flipped_horizontally, flipped_vertically, x, y)
 
@@ -651,8 +686,8 @@ def ga_for_placement_in_grid(shapes, expected_size, expected_counts):
 
         if generation == max_generation_count - 1 and has_any_overlap(best_occupancy_grid):
             generation = 0
-            print("Resetting")
-            visualize_individual(best_individual, shapes, expected_size, expected_counts)
+
+            visualize_individual(best_individual, shapes, expected_size, expected_counts, placement=False)
 
             best_individual = None
             best_fitness = np.inf
@@ -662,7 +697,7 @@ def ga_for_placement_in_grid(shapes, expected_size, expected_counts):
 
     return best_individual
 
-def visualize_individual(individual, shapes, expected_size, expected_counts):
+def visualize_individual(individual, shapes, expected_size, expected_counts, placement=True):
     print()
 
     required_shapes = get_required_shapes(shapes, expected_counts)
@@ -672,10 +707,12 @@ def visualize_individual(individual, shapes, expected_size, expected_counts):
         num_rotations, flipped_horizontally, flipped_vertically, x, y = item
         transformed_shape = apply_transformations(shape, num_rotations, flipped_horizontally, flipped_vertically)
         for line in transformed_shape:
-            print(line)
+            if placement:
+                print(line)
 
         placement_data.append((transformed_shape, x, y))
-        print(f"Placed at: ({x}, {y})\n")
+        if placement:
+            print(f"Placed at: ({x}, {y})\n")
 
     empty_grid_for_placement = empty_grid(grid_width, grid_height, '.')
     result_grid, occupancy_grid = place_shapes(empty_grid_for_placement, placement_data)
