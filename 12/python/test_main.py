@@ -548,11 +548,46 @@ def test_input_part_one():
 
         shapes = parse_shapes(shape_line)
 
+        # for requirement_line in requirement_lines:
+        #     expected_size, expected_counts = parse_line_to_requirements(requirement_line)
+
+        #     _ = ga_for_placement_in_grid(shapes, expected_size, expected_counts)
+
+    assert True
+
+def test_real_input_sizes():
+    with open(r"c:/Projects/playground/aoc2025/12/input.txt", encoding='utf-8') as f:
+        lines = f.read()
+
+        requirement_index = 1
+        for line in lines.splitlines():
+            if 'x' in line:
+                break
+            requirement_index += 1
+
+        split_lines = lines.splitlines()
+        
+        requirement_lines = split_lines[requirement_index - 1:]
+
+        print("Length of requirement lines:", len(requirement_lines))
+
+        total_exceeding = 0
+
         for requirement_line in requirement_lines:
             expected_size, expected_counts = parse_line_to_requirements(requirement_line)
 
-            _ = ga_for_placement_in_grid(shapes, expected_size, expected_counts)
+            grid_size = expected_size[0] * expected_size[1]
+            shape_size = 0
 
+            for count in expected_counts:
+                shape_size += count * 9
+
+            if shape_size > grid_size:
+                print(f"Shape size {shape_size} exceeds grid size {grid_size} for requirement line: {requirement_line}")
+                total_exceeding += 1
+
+        print(f"Total exceeding cases: {total_exceeding}")
+                
     assert True
 
 def get_required_shapes(shapes, required_counts):
