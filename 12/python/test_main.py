@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 
 def test_rotate_right_once():
     shape = [
@@ -253,6 +254,91 @@ def test_place_shapes_with_overlap():
     assert result_grid == expected_grid
     assert result_occupancy == expected_occupancy
 
+def test_get_max_x_and_y():
+    grid_width = 4
+    grid_height = 4
+
+    expected_max_x = 1
+    expected_max_y = 1
+
+    result_max_x, result_max_y = get_max_x_and_y(grid_width, grid_height)
+
+    assert result_max_x == expected_max_x
+    assert result_max_y == expected_max_y
+
+def test_get_required_shapes():
+    shapes = [
+        [['#', '#'], ['#', '#']],
+        [['#', '#', '#'], ['.', '#', '.']],
+    ]
+    required_counts = [1, 2]
+
+    expected = [
+        [['#', '#'], ['#', '#']],
+        [['#', '#', '#'], ['.', '#', '.']],
+        [['#', '#', '#'], ['.', '#', '.']],
+    ]
+
+    result = get_required_shapes(shapes, required_counts)
+
+    assert result == expected
+
+def test_parses_shapes():
+    input = """0:
+###
+##.
+##.
+
+1:
+###
+##.
+.##
+
+2:
+.##
+###
+##.
+
+3:
+##.
+###
+##.
+
+4:
+###
+#..
+###
+
+5:
+###
+.#.
+###
+"""
+    expected_shapes = [
+        [['#', '#', '#'], 
+         ['#', '#', '.'], 
+         ['#', '#', '.']],
+        [['#', '#', '#'], 
+         ['#', '#', '.'], 
+         ['.', '#', '#']],
+        [['.', '#', '#'], 
+         ['#', '#', '#'], 
+         ['#', '#', '.']],        
+        [['#', '#', '.'], 
+         ['#', '#', '#'], 
+         ['#', '#', '.']],
+        [['#', '#', '#'], 
+        ['#', '.', '.'], 
+        ['#', '#', '#']],
+        [['#', '#', '#'], 
+         ['.', '#', '.'], 
+         ['#', '#', '#']],
+    ]
+
+    result_shapes = parse_shapes(input)
+
+    assert result_shapes == expected_shapes
+
 def rotate_right(shape):
     return [list(reversed(col)) for col in zip(*shape)]
 
@@ -285,7 +371,7 @@ def place_shapes(grid, placement_data):
     occupancy_grid = empty_grid(grid_width, grid_height, 0)
     updated_grid = [row[:] for row in grid]
 
-    for index, (shape, x_offset, y_offset) in enumerate(placement_data):
+    for _, (shape, x_offset, y_offset) in enumerate(placement_data):
         shape_height = len(shape)
         shape_width = len(shape[0]) if shape_height > 0 else 0
 
@@ -323,6 +409,19 @@ def get_occupancy_grid(grid_width, grid_height, placement_data):
 
     return occupancy_grid
 
+def get_max_x_and_y(grid_width, grid_height):
+    return grid_width - 3, grid_height - 3
+
+def parse_shapes(input):
+    shapes = []
+    shape_blocks = input.strip().split("\n\n")
+    for block in shape_blocks:
+        lines = block.strip().split("\n")
+        shape = [list(line) for line in lines[1:]]
+        shapes.append(shape)
+
+    return shapes
+
 # def test_input_part_one():
 #     with open(r"c:/Projects/playground/aoc2025/12/input.txt", encoding='utf-8') as f:
 #         total_counts = 0
@@ -332,3 +431,229 @@ def get_occupancy_grid(grid_width, grid_height, placement_data):
 #             print()
 
 #     assert True
+
+def test_fitness_function():
+    good_occupancy_grid = [
+        [0, 1, 0],
+        [1, 1, 1],
+        [0, 1, 0],
+    ]
+    worse_occupancy_grid = [
+        [0, 1, 0],
+        [2, 2, 1],
+        [0, 1, 0],
+    ]
+
+    good_fitness = fitness_function(good_occupancy_grid)
+    worse_fitness = fitness_function(worse_occupancy_grid)
+
+    assert good_fitness < worse_fitness
+
+def test_create_population_with_no_best_individual():
+    required_shapes = [
+        [['#', '#'], ['#', '#']],
+        [['#', '#', '#'], ['.', '#', '.']],
+    ]
+    population_size = 10
+    max_x = 5
+    max_y = 5
+    best_individual = None
+
+    population = create_population(population_size, required_shapes, max_x, max_y, best_individual)
+
+    assert len(population) == population_size
+
+    for individual in population:
+        assert len(individual) == len(required_shapes)
+
+        for item in individual:
+            num_rotations, flipped_horizontally, flipped_vertically, x, y = item
+
+            assert num_rotations in [0, 1, 2, 3]
+            assert flipped_horizontally in [True, False]
+            assert flipped_vertically in [True, False]
+            assert 0 <= x <= max_x
+            assert 0 <= y <= max_y
+
+def test_applies_transformations():
+    shape = [
+        ['#', '.', '#'],
+        ['#', '.', '#'],
+        ['#', '#', '#'],
+    ]
+
+    transformed_shape = apply_transformations(shape, 1, True, False)
+
+    expected_shape = [
+        ['#', '#', '#'],
+        ['.', '.', '#'],
+        ['#', '#', '#'],
+    ]
+
+    assert transformed_shape == expected_shape
+
+def test_ga_debug():
+    shapes = [
+        [['#', '#', '#'], 
+         ['#', '#', '.'], 
+         ['#', '#', '.']],
+        [['#', '#', '#'], 
+         ['#', '#', '.'], 
+         ['.', '#', '#']],
+        [['.', '#', '#'], 
+         ['#', '#', '#'], 
+         ['#', '#', '.']],        
+        [['#', '#', '.'], 
+         ['#', '#', '#'], 
+         ['#', '#', '.']],
+        [['#', '#', '#'], 
+        ['#', '.', '.'], 
+        ['#', '#', '#']],
+        [['#', '#', '#'], 
+         ['.', '#', '.'], 
+         ['#', '#', '#']],
+    ]
+    size = [4, 4]
+    counts = [0, 0, 0, 0, 2, 0]
+
+    best_individual = ga_for_placement_in_grid(shapes, size, counts)
+
+    print("Best Individual:", best_individual)
+
+    visualize_individual(best_individual, shapes, size, counts)
+
+    assert True
+
+def fitness_function(occupancy_grid):
+    single_occupancy_count = 0
+    overlaps = []
+
+    for row in occupancy_grid:
+        for cell in row:
+            if cell == 1:
+                single_occupancy_count += 1
+            elif cell > 1:
+                overlaps.append(cell + cell)
+
+    return single_occupancy_count + sum(overlaps)
+
+def get_required_shapes(shapes, required_counts):
+    required_shapes = []
+    for shape, count in zip(shapes, required_counts):
+        for _ in range(count):
+            required_shapes.append(shape)
+
+    return required_shapes
+
+def create_population(population_size, required_shapes, max_x, max_y, best_individual):
+    # individual: [
+    #   (num_rotations, flipped_horizontally, flipped_vertically, x, y),
+    #   (num_rotations, flipped_horizontally, flipped_vertically, x, y),
+    #   ...
+    # ]
+    # individual length is the same as required_shapes length
+    # num_rotations: random pick from 0, 1, 2, 3
+    # flipped_horizontally: random pick from True, False
+    # flipped_vertically: random pick from True, False
+    # x: random pick from 0 to max_x
+    # y: random pick from 0 to max_y
+    # The above apply when best_individual is None
+    # When best_individual is provided, create a new individual by slightly mutating the best_individual
+
+    population = []
+    flip_probability = 0.1
+    max_rotattions = 4
+
+    for _ in range(population_size):
+        individual = []
+        for _ in required_shapes:
+            if best_individual is None:
+                num_rotations = np.random.randint(0, max_rotattions)
+                flipped_horizontally = np.random.choice([True, False])
+                flipped_vertically = np.random.choice([True, False])
+                x = np.random.randint(0, max_x + 1)
+                y = np.random.randint(0, max_y + 1)
+            else:
+                best_item = best_individual[len(individual)]
+                num_rotations = (best_item[0] + np.random.choice([-1, 0, 1])) % max_rotattions
+                flipped_horizontally = best_item[1] if np.random.rand() > flip_probability else not best_item[1]
+                flipped_vertically = best_item[2] if np.random.rand() > flip_probability else not best_item[2]
+                x = min(max(best_item[3] + np.random.choice([-1, 0, 1]), 0), max_x)
+                y = min(max(best_item[4] + np.random.choice([-1, 0, 1]), 0), max_y)
+
+            individual.append((num_rotations, flipped_horizontally, flipped_vertically, x, y))
+        population.append(individual)
+
+    return population
+
+def apply_transformations(shape, num_rotations, flipped_horizontally, flipped_vertically):
+    transformed_shape = shape
+    for _ in range(num_rotations):
+        transformed_shape = rotate_right(transformed_shape)
+    if flipped_horizontally:
+        transformed_shape = flip_horizontally(transformed_shape)
+    if flipped_vertically:
+        transformed_shape = flip_vertically(transformed_shape)
+
+    return transformed_shape
+
+def ga_for_placement_in_grid(shapes, expected_size, expected_counts):
+    required_shapes = get_required_shapes(shapes, expected_counts)
+    grid_width, grid_height = expected_size
+    max_x, max_y = get_max_x_and_y(grid_width, grid_height)
+
+    population_size = 1
+    generations = 1
+    best_individual = None
+    best_fitness = np.inf
+
+    for generation in range(generations):
+        population = create_population(population_size, required_shapes, max_x, max_y, best_individual)
+
+        for individual in population:
+            placement_data = []
+            for shape, item in zip(required_shapes, individual):
+                num_rotations, flipped_horizontally, flipped_vertically, x, y = item
+                transformed_shape = apply_transformations(shape, num_rotations, flipped_horizontally, flipped_vertically)
+                placement_data.append((transformed_shape, x, y))
+
+            occupancy_grid = get_occupancy_grid(grid_width, grid_height, placement_data)
+            empty_grid_for_placement = empty_grid(grid_width, grid_height, '.')
+
+            # Acutal placement
+            _, occupancy_grid = place_shapes(empty_grid_for_placement, placement_data)
+
+            fitness = fitness_function(occupancy_grid)
+
+            if fitness < best_fitness:
+                best_fitness = fitness
+                best_individual = individual
+
+        if best_fitness == len(required_shapes):
+            break
+
+    return best_individual
+
+def visualize_individual(individual, shapes, expected_size, expected_counts):
+    required_shapes = get_required_shapes(shapes, expected_counts)
+    grid_width, grid_height = expected_size
+    placement_data = []
+    for shape, item in zip(required_shapes, individual):
+        num_rotations, flipped_horizontally, flipped_vertically, x, y = item
+        transformed_shape = apply_transformations(shape, num_rotations, flipped_horizontally, flipped_vertically)
+        for line in transformed_shape:
+            print(line)
+
+        placement_data.append((transformed_shape, x, y))
+        print(f"Placed at: ({x}, {y})\n")
+
+    empty_grid_for_placement = empty_grid(grid_width, grid_height, '.')
+    result_grid, occupancy_grid = place_shapes(empty_grid_for_placement, placement_data)
+
+    print("Resulting Grid:")
+    for row in result_grid:
+        print(''.join(row))
+
+    print("\nOccupancy Grid:")
+    for row in occupancy_grid:
+        print(' '.join(str(cell) for cell in row))
