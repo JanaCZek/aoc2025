@@ -34,6 +34,18 @@ def test_intializes_nodes():
 
     assert nodes == expected_nodes
 
+def test_two_differnet_identifier_data_are_not_equal():
+    data_one = [
+        ['svr', ['svr'], 2, 0],
+        ['aaa', ['fft'], 1, 0],
+    ]
+    data_two = [
+        ['svr', ['svr', 'fft'], 2, 1],
+        ['aaa', ['fft'], 1, 0],
+    ]
+
+    assert data_one != data_two
+
 def test_finds_starting_identifiers():
     input = """svr: aaa bbb
 aaa: out
@@ -139,10 +151,6 @@ zmp: out
         ['zmp', ['out'], 1, 1],
     ]
 
-    print()
-    for record in updated_identifier_data:
-        print(record)
-        
     for i in range(len(expected_updated_records)):
         identifier = expected_updated_records[i][0]
         actual = []
@@ -170,7 +178,7 @@ bbb: out
 aaa: out
 """
     expected_updated_records = [
-        ['svr', ['svr', 'dac', 'fft', 'out'], 1, 1],
+        ['svr', ['svr', 'dac', 'fft', 'out'], 1, 2],
         ['dac', ['dac', 'fft', 'out'], 1, 2],
         ['fft', ['fft', 'out'], 1, 2],
         ['ddd', ['out'], 2, 2],
@@ -181,10 +189,6 @@ aaa: out
 
     updated_identifier_data = process_all_identifiers(input)
 
-    print()
-    for record in updated_identifier_data:
-        print(record)
-        
     for i in range(len(expected_updated_records)):
         identifier = expected_updated_records[i][0]
         actual = []
@@ -199,12 +203,12 @@ aaa: out
 def test_input_part_two_small_one():
     with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
         lines = f.read()
-        # data = process_all_identifiers(lines)
+        data = process_all_identifiers(lines)
 
-        # print("Output")
-        # for item in data:
-        #     if item[-1] > 0:
-        #         print(item)
+        print("Output")
+        for item in data:
+            if item[-1] > 0:
+                print(item)
 
     assert True
 
@@ -267,8 +271,6 @@ def process_all_identifiers(input):
     output = identifier_data.copy()
 
     identifiers_to_process = find_starting_identifiers(input)
-    processed_count = 0
-    max_processed_count = len(identifier_data)
 
     for identifier in identifiers_to_process:
         data = []
@@ -282,18 +284,22 @@ def process_all_identifiers(input):
                 record[3] = data[3]
                 break
 
-    while processed_count < max_processed_count:
-        identifiers_to_process_next = []
-        for identifier in identifiers_to_process:
-            output = process_single_identifier(identifier, output, connection_map)
-            processed_count += 1
+    previous = []
+    current = output
 
+    while current != previous:
+        identifiers_to_process_next = []
+        previous = current.copy()
+
+        for identifier in identifiers_to_process:
+            current = process_single_identifier(identifier, current, connection_map)
+            
             connected_identifiers = get_identifiers_connected_to(identifier, connection_map)
             identifiers_to_process_next.extend(connected_identifiers)
 
-        identifiers_to_process = identifiers_to_process_next
+        identifiers_to_process = list(set(identifiers_to_process_next))
 
-    return output
+    return current
 
 def process_single_identifier(identifier, identifier_data, connection_map):
     single_identifier_data = []
