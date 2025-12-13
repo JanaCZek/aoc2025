@@ -139,6 +139,10 @@ zmp: out
         ['zmp', ['out'], 1, 1],
     ]
 
+    print()
+    for record in updated_identifier_data:
+        print(record)
+        
     for i in range(len(expected_updated_records)):
         identifier = expected_updated_records[i][0]
         actual = []
@@ -155,6 +159,54 @@ def assert_identifier_record(actual, expected):
     assert set(actual[1]) == set(expected[1])
     assert actual[2] == expected[2]
     assert actual[3] == expected[3]
+
+def test_process_all_simple():
+    input = """svr: dac
+dac: fft
+fft: ddd
+ddd: aaa ccc
+ccc: bbb
+bbb: out
+aaa: out
+"""
+    expected_updated_records = [
+        ['svr', ['svr', 'dac', 'fft', 'out'], 1, 1],
+        ['dac', ['dac', 'fft', 'out'], 1, 2],
+        ['fft', ['fft', 'out'], 1, 2],
+        ['ddd', ['out'], 2, 2],
+        ['aaa', ['out'], 1, 1],
+        ['ccc', ['out'], 1, 1],
+        ['bbb', ['out'], 1, 1]
+    ]
+
+    updated_identifier_data = process_all_identifiers(input)
+
+    print()
+    for record in updated_identifier_data:
+        print(record)
+        
+    for i in range(len(expected_updated_records)):
+        identifier = expected_updated_records[i][0]
+        actual = []
+        for record in updated_identifier_data:
+            if record[0] == identifier:
+                actual = record
+                break
+        expected = expected_updated_records[i]
+
+        assert_identifier_record(actual, expected)
+
+def test_input_part_two_small_one():
+    with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
+        lines = f.read()
+        # data = process_all_identifiers(lines)
+
+        # print("Output")
+        # for item in data:
+        #     if item[-1] > 0:
+        #         print(item)
+
+    assert True
 
 def initialize_nodes(input):
     # output: [ identifier, [ identifiers_of_interest_found ], total_connections, traversed_connections ]
