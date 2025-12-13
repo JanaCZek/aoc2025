@@ -91,13 +91,13 @@ def test_process_single_indentifier():
     identifier_data = initialize_nodes(sample_input)
     connection_map = create_connections(sample_input)
 
-    updated_identifier_data = process_identifier(identifier_data[-1][0], identifier_data, connection_map)
+    updated_identifier_data = process_single_identifier(identifier_data[-1][0], identifier_data, connection_map)
 
     expected_updated_record = ['fff', ['out'], 2, 1]
 
     assert expected_updated_record in updated_identifier_data
 
-    updated_identifier_data = process_identifier(identifier_data[-3][0], updated_identifier_data, connection_map)
+    updated_identifier_data = process_single_identifier(identifier_data[-3][0], updated_identifier_data, connection_map)
 
     expected_updated_records = [
         ['dac', ['dac', 'out'], 1, 1],
@@ -106,6 +106,55 @@ def test_process_single_indentifier():
 
     for record in expected_updated_records:
         assert record in updated_identifier_data
+
+def test_process_all_identifiers():
+    input = """svr: uvz ucg
+uvz: fft
+ucg: dac
+fft: oll
+dac: uhp
+xwe: vol
+oll: vol
+uhp: zmp
+mig: xtq
+vol: out
+xtq: out
+zmp: out
+"""
+
+    updated_identifier_data = process_all_identifiers(input)
+
+    expected_updated_records = [
+        ['svr', ['svr', 'fft', 'dac', 'out'], 2, 2],
+        ['uvz', ['fft', 'out'], 1, 1],
+        ['ucg', ['dac', 'out'], 1, 1],
+        ['fft', ['fft', 'out'], 1, 1],
+        ['dac', ['dac', 'out'], 1, 1],
+        ['oll', ['out'], 1, 1],
+        ['uhp', ['out'], 1, 1],
+        ['vol', ['out'], 1, 1],
+        ['xwe', ['out'], 1, 1],
+        ['mig', ['out'], 1, 1],
+        ['xtq', ['out'], 1, 1],
+        ['zmp', ['out'], 1, 1],
+    ]
+
+    for i in range(len(expected_updated_records)):
+        identifier = expected_updated_records[i][0]
+        actual = []
+        for record in updated_identifier_data:
+            if record[0] == identifier:
+                actual = record
+                break
+        expected = expected_updated_records[i]
+
+        assert_identifier_record(actual, expected)
+
+def assert_identifier_record(actual, expected):
+    assert actual[0] == expected[0]
+    assert set(actual[1]) == set(expected[1])
+    assert actual[2] == expected[2]
+    assert actual[3] == expected[3]
 
 def initialize_nodes(input):
     # output: [ identifier, [ identifiers_of_interest_found ], total_connections, traversed_connections ]
@@ -159,19 +208,49 @@ def get_identifiers_connected_to(identifier, connection_map):
 
     return connections
 
-def process_identifiers(identifier_data, connection_map):
-    return []
+def process_all_identifiers(input):
+    identifier_data = initialize_nodes(input)
+    connection_map = create_connections(input)
 
-def process_identifier(identifier, identifier_data, connection_map):
+    output = identifier_data.copy()
+
+    identifiers_to_process = find_starting_identifiers(input)
+    processed_count = 0
+    max_processed_count = len(identifier_data)
+
+    for identifier in identifiers_to_process:
+        data = []
+        for record in output:
+            if record[0] == identifier:
+                data = record
+                break
+        data[3] += 1  # Increment traversed connections
+        for record in output:
+            if record[0] == identifier:
+                record[3] = data[3]
+                break
+
+    while processed_count < max_processed_count:
+        identifiers_to_process_next = []
+        for identifier in identifiers_to_process:
+            output = process_single_identifier(identifier, output, connection_map)
+            processed_count += 1
+
+            connected_identifiers = get_identifiers_connected_to(identifier, connection_map)
+            identifiers_to_process_next.extend(connected_identifiers)
+
+        identifiers_to_process = identifiers_to_process_next
+
+    return output
+
+def process_single_identifier(identifier, identifier_data, connection_map):
     single_identifier_data = []
     for data in identifier_data:
         if data[0] == identifier:
             single_identifier_data = data
             break
-    
-    connected_identifiers = get_identifiers_connected_to(identifier, connection_map)
 
-    print(f"Processing identifier: {identifier}, connected to: {connected_identifiers}")
+    connected_identifiers = get_identifiers_connected_to(identifier, connection_map)
 
     updated_records = []
 
