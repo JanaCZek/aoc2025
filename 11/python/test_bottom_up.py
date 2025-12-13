@@ -34,7 +34,7 @@ def test_intializes_nodes():
 
     assert nodes == expected_nodes
 
-def test_two_differnet_identifier_data_are_not_equal():
+def test_two_different_identifier_data_are_not_equal():
     data_one = [
         ['svr', ['svr'], 2, 0],
         ['aaa', ['fft'], 1, 0],
@@ -45,6 +45,14 @@ def test_two_differnet_identifier_data_are_not_equal():
     ]
 
     assert data_one != data_two
+
+def test_identifies_duplicate():
+    item = ['svr', ['svr'], 2, 0]
+    list_of_data = [
+        item
+    ]
+
+    assert item in list_of_data
 
 def test_finds_starting_identifiers():
     input = """svr: aaa bbb
@@ -200,15 +208,73 @@ aaa: out
 
         assert_identifier_record(actual, expected)
 
+def test_get_paths_of_interest():
+    input = """svr: dac
+dac: fft
+fft: ddd
+ddd: aaa ccc
+ccc: bbb
+bbb: out
+aaa: out
+"""
+
+    expected_paths = [
+        ['svr', 'dac', 'fft', 'ddd', 'aaa', 'out'],
+        ['svr', 'dac', 'fft', 'ddd', 'ccc', 'bbb', 'out'],
+    ]
+    connection_map = create_connections(input)
+    identifier_data = process_all_identifiers(input)
+
+    paths = get_paths_of_interest(identifier_data, connection_map)
+
+    assert len(paths) == 2
+
+    for expected_path in expected_paths:
+        assert expected_path in paths 
+
+def test_skip_path_if_not_relevant():
+    input = """svr: dac xyz
+dac: fft
+fft: ddd
+ddd: aaa ccc
+ccc: bbb
+bbb: out
+aaa: out
+xyz: out
+"""
+
+    expected_paths = [
+        ['svr', 'dac', 'fft', 'ddd', 'aaa', 'out'],
+        ['svr', 'dac', 'fft', 'ddd', 'ccc', 'bbb', 'out'],
+    ]
+    connection_map = create_connections(input)
+    identifier_data = process_all_identifiers(input)
+
+    paths = get_paths_of_interest(identifier_data, connection_map)
+
+    for path in paths:
+        print("Found path:", path)
+
+    assert len(paths) == 2
+
+    for expected_path in expected_paths:
+        assert expected_path in paths
+
 def test_input_part_two_small_one():
     with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
         lines = f.read()
-        data = process_all_identifiers(lines)
+        # data = process_all_identifiers(lines)
 
-        print("Output")
-        for item in data:
-            if item[-1] > 0:
-                print(item)
+        # print("Output")
+        # for item in data:
+        #     if item[-1] > 0:
+        #         print(item)
+
+        # paths = get_paths_of_interest(data, create_connections(lines))
+
+        # print("Paths of interest", len(paths))
+        # for path in paths:
+        #     print(path)
 
     assert True
 
@@ -263,6 +329,12 @@ def get_identifiers_connected_to(identifier, connection_map):
             connections.append(conn[0])
 
     return connections
+
+def get_connections_of_identifier(identifier, connection_map):
+    for conn in connection_map:
+        if conn[0] == identifier:
+            return conn[1]
+    return []
 
 def process_all_identifiers(input):
     identifier_data = initialize_nodes(input)
@@ -338,3 +410,49 @@ def process_single_identifier(identifier, identifier_data, connection_map):
                 output[i] = updated_record
 
     return output
+
+def get_paths_of_interest(identifier_data, connection_map):
+    paths = []
+    relevant_connections = []
+    for record in identifier_data:
+        if set(['fft', 'dac', 'out']) == set(record[1]):
+            relevant_connections.append(record[0])
+
+    connections = get_connections_of_identifier('svr', connection_map)
+
+    # Traverse all paths from 'svr' to 'out' that go through relevant connections
+    # Use a stack for depth-first search
+    # A path must either go through a relevant connection, or if it contains 'fft' then the next connection must contain ['dac','out']
+    # A path must either go through a relevant connection, or if it contains 'dac' then the next connection must contain ['fft','out']
+    # A path must either go through a relevant connection, or if it contains both 'dac' and 'fft' then the next connection must contain ['out']
+    stack = [(['svr'], connections)]
+    while stack:
+        current_path, current_connections = stack.pop()
+        for conn in current_connections:
+            new_path = current_path + [conn]
+            if conn == 'out':
+                if new_path not in paths:
+                    paths.append(new_path)
+            else:
+                next_connections = get_connections_of_identifier(conn, connection_map)
+                if conn in relevant_connections:
+                    stack.append((new_path, next_connections))
+                else:
+                    contains_fft = 'fft' in new_path
+                    contains_dac = 'dac' in new_path
+                    if contains_fft and not contains_dac:
+                        for next_conn in next_connections:
+                            for record in identifier_data:
+                                if record[0] == next_conn and set(['dac', 'out']).issubset(set(record[1])):
+                                    stack.append((new_path, [next_conn]))
+                    elif contains_dac and not contains_fft:
+                        for next_conn in next_connections:
+                            for record in identifier_data:
+                                if record[0] == next_conn and set(['fft', 'out']).issubset(set(record[1])):
+                                    stack.append((new_path, [next_conn]))
+                    elif contains_dac and contains_fft:
+                        for next_conn in next_connections:
+                            for record in identifier_data:
+                                if (record[0] == next_conn and 'out' in record[1]) or next_conn == 'out':
+                                    stack.append((new_path, [next_conn]))
+    return paths
