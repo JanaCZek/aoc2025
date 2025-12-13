@@ -106,8 +106,18 @@
 - Initially set of in C#, but quickly switched to Python because I realized that I could use genetic algorithms to perform a heuristic search - worked for part one, not for part two
 
 ### Day 11
-- Language TBD
-- Try finishing day 10 part two
+- Python
 
+**Practice** 
+- TDD in Python
+
+### Day 12
+- Python
+
+**Practice** 
+- TDD in Python
+- Genetic algorithms
+
+### TODO
 **Practice** 
 - Try implementing any of the previous tasks in SQL, for shits and giggles
