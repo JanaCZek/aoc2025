@@ -303,13 +303,9 @@ def calculate_fitness_score(individual, current_state, desired_state, fitness_ca
     return score
 
 def ga_joltage(button_sets, current_state, desired_state):
-    population_size = 60
-    generations_count = 100
+    population_size = 50
+    generations_count = 1000
     generation = 0
-
-    global_best_score = -np.inf
-    global_best_individual = None
-    global_minimum_button_press_count = np.inf
 
     generation_carried_individual = None
     generation_carried_score = -np.inf
@@ -320,8 +316,7 @@ def ga_joltage(button_sets, current_state, desired_state):
     while generation < generations_count:
         matches_desired = False
 
-        population = create_population(population_size, button_sets, desired_state, 
-                                       dict(global_best_individual) if global_best_individual else generation_carried_individual)
+        population = create_population(population_size, button_sets, desired_state, dict(generation_carried_individual) if generation_carried_individual else None)
         fitness_scores = {
             individual: calculate_fitness_score(dict(individual), current_state, desired_state, fitness_cache)
             for individual in population
@@ -336,12 +331,6 @@ def ga_joltage(button_sets, current_state, desired_state):
         if matches_desired:
             output.append((total_button_presses, dict(best_individual)))
         
-        # if best_score >= global_best_score and total_button_presses <= global_minimum_button_press_count and matches_desired:
-        if best_score > global_best_score and total_button_presses < global_minimum_button_press_count:
-            global_best_score = best_score
-            global_best_individual = best_individual
-            global_minimum_button_press_count = total_button_presses
-
         if best_score > generation_carried_score:
             generation_carried_individual = dict(best_individual)
             generation_carried_score = best_score
@@ -349,20 +338,16 @@ def ga_joltage(button_sets, current_state, desired_state):
         generation += 1
 
         if len(output) == 0 and generation == generations_count:
-            global_best_score = -np.inf
-            global_best_individual = None
-            global_minimum_button_press_count = np.inf
-
             generation = 0
 
-    if global_best_individual is None:
-        global_best_individual = best_individual
-        global_minimum_button_press_count = total_button_presses
+            print("Best score so far:", generation_carried_score)
+            print("Joltage state:", increase_joltage(dict(generation_carried_individual), current_state))
+            print("Desired state:", desired_state)
 
     # Get the best individual from output that has the lowest button press count
-    best_output = min(output, key=lambda x: x[0]) if output else None
+    best_output = min(output, key=lambda x: x[0])
 
-    return best_output if best_output else None
+    return best_output
 
 def parse_line_to_machine_with_joltage(line):
     parts = line.split(" ")
