@@ -59,52 +59,27 @@ def test_increase_joltage():
 
 def test_combination_generator():
     button_sets = [
+        (0,),
+        (1,),
         (0, 1),
-        (2,),
-        (1, 2),
     ]
-    desired_state = [3, 4]
+    desired_state = [2, 2]
 
     expected_combinations = (
         {
+            (0,): 2,
+            (1,): 2,
             (0, 1): 0,
-            (2,): 0,
-            (1, 2): 0,
         },
         {
+            (0,): 0,
+            (1,): 0,
+            (0, 1): 2,
+        },
+        {
+            (0,): 1,
+            (1,): 1,
             (0, 1): 1,
-            (2,): 0,
-            (1, 2): 0,
-        },
-        {
-            (0, 1): 0,
-            (2,): 1,
-            (1, 2): 0,
-        },
-        {
-            (0, 1): 0,
-            (2,): 0,
-            (1, 2): 1,
-        },
-        {
-            (0, 1): 1,
-            (2,): 1,
-            (1, 2): 0,
-        },
-        {
-            (0, 1): 1,
-            (2,): 0,
-            (1, 2): 1,
-        },
-        {
-            (0, 1): 0,
-            (2,): 1,
-            (1, 2): 1,
-        },
-        {
-            (0, 1): 1,
-            (2,): 1,
-            (1, 2): 1,
         },
     )
 
@@ -117,12 +92,18 @@ def test_combination_generator():
                 break
         assert found, f"Expected combination not found: {expected}"
 
+    for generated in button_press_combination_generator(button_sets, desired_state):
+        print(generated)
+
 def test_button_press_counts():
     lines = [
         "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}",
         "[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}",
         "[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}",
-        "[.#.#] (0,2) (1,3) {1,16,1,16}"
+        "[.#.#] (0,2) (1,3) {1,16,1,16}",
+        "[#.#.] (1,3) (0,2) {11,1,11,1}",
+        "[#.#.] (2,3) (1,3) (0,3) {8,9,6,23}",
+        "[#.##] (0,1,3) (0,2,3) {20,15,5,20}",
     ]
     for line in lines:
         all_counts = all_counts_of_button_presses_for_joltage(line)
