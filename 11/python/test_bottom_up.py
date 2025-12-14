@@ -263,18 +263,18 @@ xyz: out
 def test_input_part_two_small_one():
     with open(r"c:/Projects/playground/aoc2025/11/input.txt", encoding='utf-8') as f:
         lines = f.read()
-        # data = process_all_identifiers(lines)
+        data = process_all_identifiers(lines)
 
-        # print("Output")
-        # for item in data:
-        #     if item[-1] > 0:
-        #         print(item)
+        print("Output")
+        for item in data:
+            if {'fft', 'dac', 'out'}.issubset(set(item[1])):
+                print(item)
 
-        # paths = get_paths_of_interest(data, create_connections(lines))
+        paths = get_paths_of_interest(data, create_connections(lines))
 
-        # print("Paths of interest", len(paths))
-        # for path in paths:
-        #     print(path)
+        print("Paths of interest", len(paths))
+        for path in paths:
+            print(path)
 
     assert True
 
@@ -413,6 +413,7 @@ def process_single_identifier(identifier, identifier_data, connection_map):
 
 def get_paths_of_interest(identifier_data, connection_map):
     paths = []
+    paths_count = 0
     relevant_connections = []
     for record in identifier_data:
         if set(['fft', 'dac', 'out']) == set(record[1]):
@@ -431,8 +432,9 @@ def get_paths_of_interest(identifier_data, connection_map):
         for conn in current_connections:
             new_path = current_path + [conn]
             if conn == 'out':
-                if new_path not in paths:
-                    paths.append(new_path)
+                # print(new_path)
+                # paths.append(new_path)
+                paths_count += 1
             else:
                 next_connections = get_connections_of_identifier(conn, connection_map)
                 if conn in relevant_connections:
@@ -455,4 +457,7 @@ def get_paths_of_interest(identifier_data, connection_map):
                             for record in identifier_data:
                                 if (record[0] == next_conn and 'out' in record[1]) or next_conn == 'out':
                                     stack.append((new_path, [next_conn]))
+    
+    print("Total paths of interest found:", paths_count)
+    
     return paths
