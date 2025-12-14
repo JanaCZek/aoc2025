@@ -108,8 +108,6 @@ def test_combination_generator():
         },
     )
 
-    generated_combinations = button_press_combination_generator(button_sets, desired_state)
-
     for expected in expected_combinations:
         frozen = frozenset(expected.items())
         found = False
@@ -120,23 +118,21 @@ def test_combination_generator():
         assert found, f"Expected combination not found: {expected}"
 
 def test_button_press_counts():
-    line = "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"
-    all_counts = all_counts_of_button_presses_for_joltage(line)
+    lines = [
+        "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}",
+        "[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}",
+        "[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}",
+        "[.#.#] (0,2) (1,3) {1,16,1,16}"
+    ]
+    for line in lines:
+        all_counts = all_counts_of_button_presses_for_joltage(line)
 
-    print()
-    print("Combinations")
-    for generated in all_counts:
-        print(generated)
-    assert True
-
-    line = "[##...##] (0,3,4,6) (1,2,4,5,6) (0,1,2,5,6) (0,1,3,5) (0,2,3,4,6) {29,26,26,12,9,26,26}"
-    all_counts = all_counts_of_button_presses_for_joltage(line)
-
-    print()
-    print("Combinations")
-    for generated in all_counts:
-        print(generated)
-    assert True
+        print()
+        print("Combinations")
+        for generated in all_counts:
+            print(generated)
+            print(sum(generated.values()))
+        assert True
     
 def all_counts_of_button_presses_for_joltage(line):
     desired_state, button_sets = parse_line_to_machine_with_joltage(line)
@@ -152,7 +148,7 @@ def button_press_combination_generator(button_sets, desired_state):
     from itertools import product
 
     num_button_sets = len(button_sets)
-    joltage_range = range(len(desired_state))
+    joltage_range = range(max(desired_state) + 1)
     for counts in product(joltage_range, repeat=num_button_sets):
         yield {
             button_sets[i]: counts[i]
