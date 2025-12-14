@@ -274,7 +274,7 @@ def calculate_fitness_score(individual, current_state, desired_state, fitness_ca
     return score
 
 def ga_joltage(button_sets, current_state, desired_state):
-    population_size = 30
+    population_size = 20
     generations_count = 50
     generation = 0
 
@@ -283,12 +283,10 @@ def ga_joltage(button_sets, current_state, desired_state):
     global_minimum_button_press_count = np.inf
 
     fitness_cache = {}
-    generation_carried_best_individual = None
-    generation_carried_best_score = -np.inf
 
     while generation < generations_count:
         population = create_population(population_size, button_sets, desired_state, 
-                                       dict(global_best_individual) if global_best_individual else generation_carried_best_individual)
+                                       dict(global_best_individual) if global_best_individual else None)
         fitness_scores = {
             individual: calculate_fitness_score(dict(individual), current_state, desired_state, fitness_cache)
             for individual in population
@@ -304,10 +302,6 @@ def ga_joltage(button_sets, current_state, desired_state):
             global_best_score = best_score
             global_best_individual = best_individual
             global_minimum_button_press_count = total_button_presses
-
-        if best_score >= generation_carried_best_score:
-            generation_carried_best_score = best_score
-            generation_carried_best_individual = dict(best_individual)
                   
         generation += 1
 
