@@ -261,7 +261,7 @@ def create_population(population_size, button_sets, desired_joltage, best_indivi
 def calculate_fitness_score(individual, current_state, desired_state, fitness_cache):
     total_button_presses = sum(count for _, count in dict(individual).items())
 
-    score = fitness_cache.get(total_button_presses)
+    score = fitness_cache.get(frozenset(individual.items()), None)
     if score is not None:
         return score
     
@@ -269,13 +269,13 @@ def calculate_fitness_score(individual, current_state, desired_state, fitness_ca
 
     score = fitness_function_joltage(total_button_presses, new_state, desired_state)
 
-    fitness_cache[total_button_presses] = score
+    fitness_cache[frozenset(individual.items())] = score
 
     return score
 
 def ga_joltage(button_sets, current_state, desired_state):
-    population_size = 10
-    generations_count = 500
+    population_size = 30
+    generations_count = 50
     generation = 0
 
     global_best_score = -np.inf
@@ -300,25 +300,23 @@ def ga_joltage(button_sets, current_state, desired_state):
         total_button_presses = sum(count for _, count in dict(best_individual).items())
         matches_desired = increase_joltage(dict(best_individual), current_state) == desired_state
         
-        if best_score > global_best_score and total_button_presses < global_minimum_button_press_count and matches_desired:
+        if best_score >= global_best_score and total_button_presses <= global_minimum_button_press_count and matches_desired:
             global_best_score = best_score
             global_best_individual = best_individual
             global_minimum_button_press_count = total_button_presses
 
-        if best_score > generation_carried_best_score:
+        if best_score >= generation_carried_best_score:
             generation_carried_best_score = best_score
             generation_carried_best_individual = dict(best_individual)
                   
         generation += 1
 
-        # if not matches_desired and generation == generations_count:
-        #     population = create_population(population_size, button_sets, desired_state, None)
+        if not matches_desired and generation == generations_count:
+            global_best_score = -np.inf
+            global_best_individual = None
+            global_minimum_button_press_count = np.inf
 
-        #     global_best_score = -np.inf
-        #     global_best_individual = None
-        #     global_minimum_button_press_count = np.inf
-
-        #     generation = 0
+            generation = 0
 
     if global_best_individual is None:
         global_best_individual = best_individual
