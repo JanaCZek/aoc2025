@@ -122,6 +122,25 @@ def test_create_population_with_best():
 
     assert len(population) == 10
 
+def test_calculate_fitness_score():
+    current_state = [0, 0, 0, 0]
+    desired_state = [3, 5, 4, 7]
+
+    individual = {
+        (3,): 2,
+        (1, 3): 0,
+        (2,): 3,
+        (2, 3): 0,
+        (0, 2): 2,
+        (0, 1): 1,
+    }
+
+    cache = {}
+
+    score = calculate_fitness_score(individual, current_state, desired_state, cache)
+
+    assert score > 0
+
 def test_ga_joltage_machine_one():
     button_sets = [
         (3,),
@@ -170,6 +189,28 @@ def test_ga_joltage_machine_two():
     assert new_state == desired_state
     assert button_press_count == expected_button_press_count
 
+def test_ga_joltage_machine_three():
+    button_sets = [
+        (0, 1, 2, 3, 4,),
+        (0, 3, 4,),
+        (0, 1, 2, 4, 5,),
+        (1, 2,),
+    ]
+    current_state = [0, 0, 0, 0, 0, 0]
+    desired_state = [10,11,11,5,10,5]
+    expected_button_press_count = 11
+
+    button_press_count, button_press_dict = ga_joltage(button_sets, current_state, desired_state)
+
+    new_state = increase_joltage(button_press_dict, current_state)
+
+    print("New state:", new_state)
+    print("Desired state:", desired_state)
+    print("Button press count:", button_press_count)
+
+    assert new_state == desired_state
+    assert button_press_count == expected_button_press_count
+
 def fitness_function_joltage(button_press_count, current_state, desired_state):
     button_state_match_score = 100
     button_press_count_penalty_multiplier = 0.9
@@ -205,37 +246,51 @@ def create_population(population_size, button_sets, desired_joltage, best_indivi
     else:
         max_spread = 1
         min_spread = -1 * max_spread
+
+        best_individual = dict(best_individual)
         
         while len(population) < population_size:
             new_individual = {
-                button_set: max(0, count + np.random.randint(min_spread, max_spread + 1))
+                button_set: max(0, count + np.random.randint(min_spread - 1, max_spread + 1))
                 for button_set, count in best_individual.items()
             }
             population.add(frozenset(new_individual.items()))
 
     return population
 
-def calculate_fitness_score(individual, current_state, desired_state):
+def calculate_fitness_score(individual, current_state, desired_state, fitness_cache):
+    total_button_presses = sum(count for _, count in dict(individual).items())
+
+    score = fitness_cache.get(total_button_presses)
+    if score is not None:
+        return score
+    
     new_state = increase_joltage(individual, current_state)
 
-    button_press_count = len(individual)
-    score = fitness_function_joltage(button_press_count, new_state, desired_state)
+    score = fitness_function_joltage(total_button_presses, new_state, desired_state)
+
+    fitness_cache[total_button_presses] = score
+
     return score
 
 def ga_joltage(button_sets, current_state, desired_state):
-    population_size = 500
-    generations_count = 100
+    population_size = 10
+    generations_count = 500
     generation = 0
 
     global_best_score = -np.inf
     global_best_individual = None
     global_minimum_button_press_count = np.inf
 
-    while generation < generations_count:
-        population = create_population(population_size, button_sets, desired_state, None)
+    fitness_cache = {}
+    generation_carried_best_individual = None
+    generation_carried_best_score = -np.inf
 
+    while generation < generations_count:
+        population = create_population(population_size, button_sets, desired_state, 
+                                       dict(global_best_individual) if global_best_individual else generation_carried_best_individual)
         fitness_scores = {
-            individual: calculate_fitness_score(dict(individual), current_state, desired_state)
+            individual: calculate_fitness_score(dict(individual), current_state, desired_state, fitness_cache)
             for individual in population
         }
 
@@ -249,8 +304,21 @@ def ga_joltage(button_sets, current_state, desired_state):
             global_best_score = best_score
             global_best_individual = best_individual
             global_minimum_button_press_count = total_button_presses
-        
+
+        if best_score > generation_carried_best_score:
+            generation_carried_best_score = best_score
+            generation_carried_best_individual = dict(best_individual)
+                  
         generation += 1
+
+        # if not matches_desired and generation == generations_count:
+        #     population = create_population(population_size, button_sets, desired_state, None)
+
+        #     global_best_score = -np.inf
+        #     global_best_individual = None
+        #     global_minimum_button_press_count = np.inf
+
+        #     generation = 0
 
     if global_best_individual is None:
         global_best_individual = best_individual
