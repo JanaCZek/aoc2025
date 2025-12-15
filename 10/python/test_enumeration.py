@@ -1,3 +1,5 @@
+import pytest
+
 from itertools import product
 
 def test_parse_line_to_machine():
@@ -189,19 +191,89 @@ def test_get_button_set_presses_satisfying_joltage():
 
     print()
     
-    combinations = set()
+    combos_list = [set(get_button_set_presses_satisfying_joltage(button_sets, i, 2)) for i in range(2)]
+    combinations = combos_list[0]
+    for next_combos in combos_list[1:]:
+        new_combinations = set()
+        for combo_one in combinations:
+            combo_one_dict = dict(combo_one)
+            combos_two_with_at_least_one_item_from_combo_one = [
+                combo_two for combo_two in next_combos
+                if any(item in combo_one_dict.items() for item in combo_two)
+            ]
+            for combo_two in combos_two_with_at_least_one_item_from_combo_one:
+                combined = dict(combo_one)
+                combined.update(dict(combo_two))
+                adding = frozenset(combined.items())
+                new_combinations.add(adding)
 
-    for combo_one in get_button_set_presses_satisfying_joltage(button_sets, 0, 2):
-        for combo_two in get_button_set_presses_satisfying_joltage(button_sets, 1, 2):
-            combined = dict(combo_one)
-            combined.update(dict(combo_two))
-            frozen_combined = frozenset(combined.items())
-            if frozen_combined in expected_combinations:
-                print(frozen_combined)
-                combinations.add(frozen_combined)
+        if len(new_combinations) == 0:
+            break
+        combinations = new_combinations
 
-    for item in expected_combinations:        
-        assert item in combinations, f"Expected combination not found: {item}"
+    for item in expected_combinations:
+        found = False
+        for generated in combinations:
+            if item == generated:
+                found = True
+                break
+        assert found, f"Expected combination not found: {item}"
+
+@pytest.mark.parametrize("button_sets, desired_joltage, expected_min_presses", [
+    ([
+        (3,),
+        (1, 3),
+        (2,),
+        (2, 3),
+        (0, 2),
+        (0, 1),
+    ], [3,5,4,7], 10),
+    ([
+        (0,2,3,4,),
+        (2,3,),
+        (0,4,),
+        (0,1,2,),
+        (1,2,3,4,),
+    ], [7,5,12,7,2], 12),
+    ([
+        (0,1,2,3,4,),
+        (0,3,4,),
+        (0,1,2,4,5,),
+        (1,2,),
+    ], [10,11,11,5,10,5], 11),
+])
+def test_get_button_set_presses_satisfying_joltage_samples(button_sets, desired_joltage, expected_min_presses):
+    combos_list = [set(get_button_set_presses_satisfying_joltage(button_sets, i, desired_joltage[i])) for i in range(len(desired_joltage))]
+    combinations = combos_list[0]
+    for next_combos in combos_list[1:]:
+        new_combinations = set()
+        for combo_one in combinations:
+            combo_one_dict = dict(combo_one)
+            combos_two_with_at_least_one_item_from_combo_one = [
+                combo_two for combo_two in next_combos
+                if any(item in combo_one_dict.items() for item in combo_two)
+            ]
+            for combo_two in combos_two_with_at_least_one_item_from_combo_one:
+                combined = dict(combo_one)
+                combined.update(dict(combo_two))
+                adding = frozenset(combined.items())
+                new_combinations.add(adding)
+
+        if len(new_combinations) == 0:
+            break
+        combinations = new_combinations
+
+    min_button_presses = 1000000
+    for combo in combinations:
+        current_joltage = [0] * len(desired_joltage)
+        combo_dict = dict(combo)
+        new_joltage = increase_joltage(combo_dict, current_joltage)
+        if new_joltage == desired_joltage:
+            total_presses = sum(combo_dict.values())
+            if total_presses < min_button_presses:
+                min_button_presses = total_presses
+
+    assert min_button_presses == expected_min_presses
 
 def all_counts_of_button_presses_for_joltage(line):
     desired_state, button_sets = parse_line_to_machine_with_joltage(line)
