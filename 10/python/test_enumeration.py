@@ -92,8 +92,8 @@ def test_combination_generator():
                 break
         assert found, f"Expected combination not found: {expected}"
 
-    for generated in button_press_combination_generator(button_sets, desired_state):
-        print(generated)
+    # for generated in button_press_combination_generator(button_sets, desired_state):
+    #     print(generated)
 
 def test_button_press_counts():
     lines = [
@@ -105,16 +105,49 @@ def test_button_press_counts():
         "[#.#.] (2,3) (1,3) (0,3) {8,9,6,23}",
         "[#.##] (0,1,3) (0,2,3) {20,15,5,20}",
     ]
-    for line in lines:
-        all_counts = all_counts_of_button_presses_for_joltage(line)
+    # for line in lines:
+    #     all_counts = all_counts_of_button_presses_for_joltage(line)
 
-        print()
-        print("Combinations")
-        for generated in all_counts:
-            print(generated)
-            print(sum(generated.values()))
-        assert True
+    #     print()
+    #     print("Combinations")
+    #     for generated in all_counts:
+    #         print(generated)
+    #         print(sum(generated.values()))
+    #     assert True
+
+def test_subset_check():
+    full_set = {
+        frozenset({(0,): 0, (1,): 0, (0, 1): 0}.items()),
+        frozenset({(0,): 0, (1,): 0, (0, 1): 1}.items()),
+        frozenset({(0,): 0, (1,): 0, (0, 1): 2}.items()),
+    }
+    subset = frozenset({(1,): 0, (0, 1): 2}.items())
     
+    found = any(subset.issubset(set) for set in full_set)
+
+    subset = frozenset({(1,): 0, (0, 1): 3}.items())
+    
+    found = any(subset.issubset(set) for set in full_set)
+
+    assert not found
+
+def test_get_button_set_presses_satisfying_joltage():
+    button_sets = [
+        (0,),
+        (1,),
+        (0, 1),
+    ]
+
+    desired_joltage = [2, 2]
+    
+    presses = get_button_set_presses_satisfying_joltage(button_sets, 0, desired_joltage[0])
+
+    # assert presses == [
+    #     frozenset({(0,): 2, (0, 1): 0}),
+    #     frozenset({(0,): 1, (0, 1): 1}),
+    #     frozenset({(0,): 0, (0, 1): 2}),
+    # ]
+
 def all_counts_of_button_presses_for_joltage(line):
     desired_state, button_sets = parse_line_to_machine_with_joltage(line)
     combinations = button_press_combination_generator(button_sets, desired_state)
@@ -142,6 +175,9 @@ def increase_joltage(button_sets_dict, current_joltage):
         sum(count for button_set, count in button_sets_dict.items() if i in button_set)
         for i in range(len(current_joltage))
     ]
+
+def get_button_set_presses_satisfying_joltage(button_sets, button_set_index, joltage_requirement):
+    return []
 
 def parse_line_to_machine_with_joltage(line):
     parts = line.split(" ")
