@@ -183,23 +183,25 @@ def test_get_button_set_presses_satisfying_joltage():
 
     expected_combinations = {
         frozenset({(0,): 0, (1,): 0, (0, 1): 2}.items()),
-        frozenset({(0,): 0, (1,): 1, (0, 1): 1}.items()),
-        frozenset({(0,): 0, (1,): 1, (0, 1): 2}.items()),
-        frozenset({(0,): 0, (1,): 2, (0, 1): 0}.items()),
-        frozenset({(0,): 0, (1,): 2, (0, 1): 2}.items()),
-        frozenset({(0,): 1, (1,): 0, (0, 1): 1}.items()),
-        frozenset({(0,): 1, (1,): 0, (0, 1): 2}.items()),
         frozenset({(0,): 1, (1,): 1, (0, 1): 1}.items()),
-        frozenset({(0,): 1, (1,): 2, (0, 1): 0}.items()),
-        frozenset({(0,): 1, (1,): 2, (0, 1): 1}.items()),
-        frozenset({(0,): 2, (1,): 0, (0, 1): 0}.items()),
-        frozenset({(0,): 2, (1,): 0, (0, 1): 2}.items()),
-        frozenset({(0,): 2, (1,): 1, (0, 1): 0}.items()),
-        frozenset({(0,): 2, (1,): 1, (0, 1): 1}.items()),
         frozenset({(0,): 2, (1,): 2, (0, 1): 0}.items()),
     }
+
+    print()
     
-    assert True
+    combinations = set()
+
+    for combo_one in get_button_set_presses_satisfying_joltage(button_sets, 0, 2):
+        for combo_two in get_button_set_presses_satisfying_joltage(button_sets, 1, 2):
+            combined = dict(combo_one)
+            combined.update(dict(combo_two))
+            frozen_combined = frozenset(combined.items())
+            if frozen_combined in expected_combinations:
+                print(frozen_combined)
+                combinations.add(frozen_combined)
+
+    for item in expected_combinations:        
+        assert item in combinations, f"Expected combination not found: {item}"
 
 def all_counts_of_button_presses_for_joltage(line):
     desired_state, button_sets = parse_line_to_machine_with_joltage(line)
