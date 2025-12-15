@@ -1,3 +1,5 @@
+from itertools import product
+
 def test_parse_line_to_machine():
     line = "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"
 
@@ -138,15 +140,66 @@ def test_get_button_set_presses_satisfying_joltage():
         (0, 1),
     ]
 
-    desired_joltage = [2, 2]
+    button_set_index = 0
+    desired_joltage = 2
     
-    presses = get_button_set_presses_satisfying_joltage(button_sets, 0, desired_joltage[0])
+    expected = {
+        frozenset({(0,): 2, (0, 1): 0}.items()),
+        frozenset({(0,): 1, (0, 1): 1}.items()),
+        frozenset({(0,): 0, (0, 1): 2}.items()),
+    }
 
-    # assert presses == [
-    #     frozenset({(0,): 2, (0, 1): 0}),
-    #     frozenset({(0,): 1, (0, 1): 1}),
-    #     frozenset({(0,): 0, (0, 1): 2}),
-    # ]
+    for item in get_button_set_presses_satisfying_joltage(button_sets, button_set_index, desired_joltage):
+        print(item)
+
+    for item in expected:
+        found = False
+        for generated in get_button_set_presses_satisfying_joltage(button_sets, button_set_index, desired_joltage):
+            if item == generated:
+                found = True
+                break
+        assert found, f"Expected combination not found: {item}"
+
+    button_set_index = 1
+    desired_joltage = 2
+    
+    expected = {
+        frozenset({(1,): 2, (0, 1): 0}.items()),
+        frozenset({(1,): 1, (0, 1): 1}.items()),
+        frozenset({(1,): 0, (0, 1): 2}.items()),
+    }
+
+    print()
+    for item in get_button_set_presses_satisfying_joltage(button_sets, button_set_index, desired_joltage):
+        print(item)
+
+    for item in expected:
+        found = False
+        for generated in get_button_set_presses_satisfying_joltage(button_sets, button_set_index, desired_joltage):
+            if item == generated:
+                found = True
+                break
+        assert found, f"Expected combination not found: {item}"
+
+    expected_combinations = {
+        frozenset({(0,): 0, (1,): 0, (0, 1): 2}.items()),
+        frozenset({(0,): 0, (1,): 1, (0, 1): 1}.items()),
+        frozenset({(0,): 0, (1,): 1, (0, 1): 2}.items()),
+        frozenset({(0,): 0, (1,): 2, (0, 1): 0}.items()),
+        frozenset({(0,): 0, (1,): 2, (0, 1): 2}.items()),
+        frozenset({(0,): 1, (1,): 0, (0, 1): 1}.items()),
+        frozenset({(0,): 1, (1,): 0, (0, 1): 2}.items()),
+        frozenset({(0,): 1, (1,): 1, (0, 1): 1}.items()),
+        frozenset({(0,): 1, (1,): 2, (0, 1): 0}.items()),
+        frozenset({(0,): 1, (1,): 2, (0, 1): 1}.items()),
+        frozenset({(0,): 2, (1,): 0, (0, 1): 0}.items()),
+        frozenset({(0,): 2, (1,): 0, (0, 1): 2}.items()),
+        frozenset({(0,): 2, (1,): 1, (0, 1): 0}.items()),
+        frozenset({(0,): 2, (1,): 1, (0, 1): 1}.items()),
+        frozenset({(0,): 2, (1,): 2, (0, 1): 0}.items()),
+    }
+    
+    assert True
 
 def all_counts_of_button_presses_for_joltage(line):
     desired_state, button_sets = parse_line_to_machine_with_joltage(line)
@@ -159,8 +212,6 @@ def all_counts_of_button_presses_for_joltage(line):
             yield combo
 
 def button_press_combination_generator(button_sets, desired_state):
-    from itertools import product
-
     num_button_sets = len(button_sets)
     joltage_range = range(max(desired_state) + 1)
     for counts in product(joltage_range, repeat=num_button_sets):
@@ -177,7 +228,20 @@ def increase_joltage(button_sets_dict, current_joltage):
     ]
 
 def get_button_set_presses_satisfying_joltage(button_sets, button_set_index, joltage_requirement):
-    return []
+    relevant_button_sets = [bs for bs in button_sets if button_set_index in bs]
+    num_relevant_button_sets = len(relevant_button_sets)
+    joltage_range = range(joltage_requirement + 1)
+
+    for counts in product(joltage_range, repeat=num_relevant_button_sets):
+        combo = {
+            relevant_button_sets[i]: counts[i]
+            for i in range(num_relevant_button_sets)
+        }
+        total_joltage = sum(
+            count for _, count in combo.items()
+        )
+        if total_joltage == joltage_requirement:
+            yield frozenset(combo.items())
 
 def parse_line_to_machine_with_joltage(line):
     parts = line.split(" ")
