@@ -30,6 +30,42 @@ public static class PathCounter
 
         return pathCount;
     }
+
+    public static ulong CountPathsOverSpecifiedNodes(Dictionary<string, List<string>> graph, string start, string end, HashSet<string> specifiedNodes)
+    {
+        return CountPathsRecursive(graph, start, end, new HashSet<string>(), specifiedNodes);
+    }
+
+    private static ulong CountPathsRecursive(Dictionary<string, List<string>> graph, string current, string end, HashSet<string> visited, HashSet<string> specifiedNodes)
+    {
+        if (current == end)
+        {
+            foreach (var node in specifiedNodes)
+            {
+                if (!visited.Contains(node))
+                {
+                    return 0;
+                }
+            }
+            return 1;
+        }
+
+        visited.Add(current);
+        ulong pathCount = 0;
+
+        if (graph.ContainsKey(current))
+        {
+            foreach (var neighbor in graph[current])
+            {
+                if (!visited.Contains(neighbor))
+                {
+                    pathCount += CountPathsRecursive(graph, neighbor, end, new HashSet<string>(visited), specifiedNodes);
+                }
+            }
+        }
+
+        return pathCount;
+    }
 }
 
 public static class InputParser
